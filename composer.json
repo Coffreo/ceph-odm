@@ -1,0 +1,21 @@
+{
+    "name": "coffreo/ceph-odm",
+    "description": "Odm for Ceph using Doctrine skeleton mapper",
+    "type": "library",
+    "require": {
+        "php": "^7.1",
+        "doctrine/skeleton-mapper": "0.0.1",
+        "aws/aws-sdk-php": "^3.85",
+        "ramsey/uuid": "^3.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "Coffreo\\CephOdm\\": "src/",
+            "Coffreo\\CephOdm\\Test\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "coffreo/php-cs-fixer-config": "^2.1",
+        "phpunit/phpunit": "^7.5"
+    }
+}

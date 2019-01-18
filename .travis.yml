@@ -1,0 +1,18 @@
+language: php
+
+php:
+  - "7.1"
+  - "7.2"
+
+env:
+  - CODECOV_TOKEN="75d17900-cf74-40dc-abd1-ab7eb997ad4e"
+
+install:
+  - make install
+
+script:
+#  - make cs-ci
+  - make test-ci
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

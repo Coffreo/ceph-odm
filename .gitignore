@@ -1,0 +1,13 @@
+# IDE Files
+.idea/
+
+# OS Files
+.DS_Store
+
+# Composer
+/vendor/
+composer.lock
+
+# PHPUnit
+phpunit.xml
+/tests/coverage/
