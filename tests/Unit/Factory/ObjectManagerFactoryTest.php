@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Test\Factory;
+namespace Coffreo\CephOdm\Test\Unit\Entity;
 
 
 use Aws\S3\S3Client;

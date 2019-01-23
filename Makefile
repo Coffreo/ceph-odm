@@ -27,9 +27,16 @@ it: build cs test
 ## alias for "it" ;)
 me-cry: it
 
+## Run application unit tests
+test-unit:
+	vendor/bin/phpunit --testsuite unit
+
+## Run application functional tests
+test-functional:
+	vendor/bin/phpunit --testsuite functional --no-coverage
+
 ## Run application tests
-test:
-	vendor/bin/phpunit
+test: test-unit test-functional
 
 ## Run CI-compliant application tests
 test-ci: test

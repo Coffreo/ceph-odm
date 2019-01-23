@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Test\Repository;
+namespace Coffreo\CephOdm\Test\Unit\Repository;
 
 use Aws\CommandInterface;
 use Aws\S3\Exception\S3Exception;

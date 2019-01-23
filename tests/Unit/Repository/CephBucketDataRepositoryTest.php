@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Test\Repository;
+namespace Coffreo\CephOdm\Test\Unit\Repository;
 
 
 use Coffreo\CephOdm\Repository\CephBucketDataRepository;
