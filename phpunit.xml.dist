@@ -7,6 +7,11 @@
          colors="true"
          bootstrap="vendor/autoload.php"
 >
+    <php>
+        <env name="CEPHDEMO_IP" value="172.32.205.77" />
+        <env name="CEPHDEMO_USER" value="sandboxAccessKey" />
+        <env name="CEPHDEMO_PASS" value="sandboxSecretKey" />
+    </php>
     <testsuites>
         <testsuite name="unit">
             <directory>tests/Unit</directory>
