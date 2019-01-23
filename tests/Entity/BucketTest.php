@@ -35,7 +35,7 @@ class BucketTest extends TestCase
 
         $mock->expects($this->once())->method('setIdentifier')->with(['Name']);
         $mock->expects($this->once())->method('setIdentifierFieldNames')->with(['name']);
-        $mock->expects($this->once())->method('mapField')->with(['fieldName' => 'name', 'name' => 'Name']);
+        $mock->expects($this->once())->method('mapField')->with(['fieldName' => 'name', 'name' => 'Bucket']);
 
         Bucket::loadMetadata($mock);
     }

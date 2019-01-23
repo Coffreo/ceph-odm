@@ -48,7 +48,7 @@ class Bucket implements HydratableInterface, IdentifiableInterface, LoadMetadata
     {
         $metadata->setIdentifier(['Name']);
         $metadata->setIdentifierFieldNames(['name']);
-        $metadata->mapField(['fieldName' => 'name', 'name' => 'Name']);
+        $metadata->mapField(['fieldName' => 'name', 'name' => 'Bucket']);
     }
 
     public function preparePersistChangeSet(): array
