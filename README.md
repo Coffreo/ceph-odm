@@ -94,5 +94,5 @@ $objects = $fileRepository->findAll();  // All objects of all buckets
 $objects = $fileRepository->findBy(['bucket' => 'my-bucket']);  // All objects of the bucket
 $objects = $fileRepository->findBy(['id' => 'e223fc11-8046-4a84-98e2-0de912d071e9']); // All objects in any bucket of the given id
 ```
-The previous statements only return objects that the **logged user owns**. For now, you can only perform a search on bucketName and/or id.
+The previous statements only return objects that the **logged user owns**. For now, you can only perform a search on bucket and/or id.
 
