@@ -1,0 +1,29 @@
+version: '2'
+
+services:
+  ceph:
+    image: ceph/daemon
+    networks:
+      ceph:
+        ipv4_address: 172.32.205.77
+    environment:
+      - MON_IP=172.32.205.77
+      - CEPH_PUBLIC_NETWORK=172.32.205.0/24
+      - CEPH_DEMO_UID=sandboxId
+      - CEPH_DEMO_ACCESS_KEY=sandboxAccessKey
+      - CEPH_DEMO_SECRET_KEY=sandboxSecretKey
+      - RGW_CIVETWEB_PORT=80
+    command: demo
+
+networks:
+  ceph:
+    external: true
+
+
+
+
+
+
+
+
+
