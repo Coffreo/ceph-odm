@@ -3,24 +3,10 @@
 
 namespace Coffreo\CephOdm\Test\Functional;
 
-use Aws\S3\S3Client;
 use Coffreo\CephOdm\Entity\Bucket;
-use Coffreo\CephOdm\Factory\ObjectManagerFactory;
-use Doctrine\SkeletonMapper\ObjectManagerInterface;
-use PHPUnit\Framework\TestCase;
 
-class BucketTest extends TestCase
+class BucketTest extends AbstractFunctionalTestCase
 {
-    /**
-     * @var ObjectManagerInterface
-     */
-    private $objectManager;
-
-    /**
-     * @var S3Client
-     */
-    private $client;
-
     private $bucketNames = [
         'mybucket2',
         'mybucket4',
@@ -28,20 +14,6 @@ class BucketTest extends TestCase
         'mybucket5',
         'mybucket3'
     ];
-
-    public function setUp()
-    {
-        $this->client = new S3Client([
-            'region' => 'us-east-1',
-            'version' => '2006-03-01',
-            'endpoint' => sprintf('http://%s/', $_ENV['CEPHDEMO_IP']),
-            'use_path_style_endpoint' => true,
-            'credentials' => ['key' => $_ENV['CEPHDEMO_USER'], 'secret' => $_ENV['CEPHDEMO_PASS']]
-        ]);
-        $this->objectManager = ObjectManagerFactory::create($this->client);
-
-        $this->clearDb();
-    }
 
     public function testInsertBucket(): void
     {
@@ -138,25 +110,5 @@ class BucketTest extends TestCase
         }
 
         return $found;
-    }
-
-    private function clearDb(): void
-    {
-        $buckets = $this->client->listBuckets();
-        foreach ($buckets['Buckets'] as $bucket) {
-            $objects = $this->client->listObjects(['Bucket' => $bucket['Name']]);
-            if (isset($objects['Contents'])) {
-                foreach ($objects['Contents'] as $object) {
-                    $this->client->deleteObject(['Bucket' => $bucket['Name'], 'Key' => $object['Key']]);
-                }
-            }
-
-            $this->client->deleteBucket(['Bucket' => $bucket['Name']]);
-        }
-    }
-
-    public function tearDown()
-    {
-        $this->clearDb();
     }
 }
