@@ -4,6 +4,7 @@
 namespace Coffreo\CephOdm\Test\Persister;
 
 use Aws\S3\S3Client;
+use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Entity\File;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
 use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
@@ -94,12 +95,12 @@ class CephFilePersisterTest extends TestCase
         $sut
             ->method('getObjectIdentifier')
             ->with($file)
-            ->willReturn(['myidentifier1' => 'myidentifier1value', 'myidentifier2' => 'myidentifier2value']);
+            ->willReturn(['Bucket' => new Bucket('mybucket'), 'Key' => 'myid']);
 
         $this->client
             ->expects($this->once())
             ->method('deleteObject')
-            ->with(['myidentifier1' => 'myidentifier1value', 'myidentifier2' => 'myidentifier2value']);
+            ->with(['Bucket' => 'mybucket', 'Key' => 'myid']);
 
         $sut->removeObject($file);
     }
