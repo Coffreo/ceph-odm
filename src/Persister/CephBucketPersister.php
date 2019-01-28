@@ -10,7 +10,7 @@ use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
  */
 class CephBucketPersister extends AbstractCephPersister
 {
-    protected function saveCephData(array $data)
+    protected function saveCephData(array $data): void
     {
         if (empty($data['Bucket'])) {
             throw new \InvalidArgumentException("Missing bucket identifier");
@@ -24,7 +24,7 @@ class CephBucketPersister extends AbstractCephPersister
         throw new \LogicException("updateObject can't be called for a Bucket object");
     }
 
-    protected function deleteCephIdentifier(array $identifier)
+    protected function deleteCephIdentifier(array $identifier): void
     {
         $this->client->deleteBucket($identifier);
     }

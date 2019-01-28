@@ -55,6 +55,6 @@ abstract class AbstractCephPersister extends BasicObjectPersister
         $this->deleteCephIdentifier($identifier);
     }
 
-    abstract protected function saveCephData(array $data);
-    abstract protected function deleteCephIdentifier(array $identifier);
+    abstract protected function saveCephData(array $data): void;
+    abstract protected function deleteCephIdentifier(array $identifier): void;
 }
