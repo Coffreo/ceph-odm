@@ -107,7 +107,10 @@ class CephFileDataRepositoryTest extends TestCase
                         throw new S3Exception('myunexpectedexception',  $this->createMock(CommandInterface::class));
 
                     default:
-                        throw new S3Exception('not found', $this->createMock(CommandInterface::class), ['code' => 404]);
+                        if (!isset($args['Bucket']) || !in_array($args['Bucket'], ['mybucket1', 'mybucket2', 'mybucket3'])) {
+                            throw new S3Exception('not found', $this->createMock(CommandInterface::class), ['code' => 'NoSuchBucket']);
+                        }
+                        throw new S3Exception('not found', $this->createMock(CommandInterface::class), ['code' => 'NoSuchKey']);
                 }
             });
 
@@ -172,7 +175,18 @@ class CephFileDataRepositoryTest extends TestCase
      * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
      * @covers ::findByIdentifier
      */
-    public function testFindWithUnknownIdentifiersShouldReturnNothing(): void
+    public function testFindWithUnknownBucketShouldReturnNothing(): void
+    {
+        $ret = $this->sut->find(['mybucket4', 'myobject1']);
+        $this->assertEquals(null, $ret);
+    }
+
+    /**
+     * @covers ::find
+     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers ::findByIdentifier
+     */
+    public function testFindWithUnknownIdShouldReturnNothing(): void
     {
         $ret = $this->sut->find(['mybucket1', 'myobject3']);
         $this->assertEquals(null, $ret);
