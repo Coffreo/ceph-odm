@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Test\Entity;
+namespace Coffreo\CephOdm\Test\Unit\Entity;
 
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Entity\File;

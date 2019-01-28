@@ -1,3 +1,6 @@
+services:
+  - docker
+
 language: php
 
 php:
@@ -6,6 +9,10 @@ php:
 
 env:
   - CODECOV_TOKEN="75d17900-cf74-40dc-abd1-ab7eb997ad4e"
+
+before_install:
+  - docker network create --subnet=172.32.205.0/24 --gateway=172.32.205.1 ceph
+  - docker-compose -f docker/docker-compose.yml up -d
 
 install:
   - make install
