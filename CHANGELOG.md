@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Throw an exception when a metadata name has non-supported characters
 
 # 0.1.1
 * Add functional tests

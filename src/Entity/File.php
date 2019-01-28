@@ -123,6 +123,10 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
 
     public function setAllMetadata(array $metadata): void
     {
+        foreach (array_keys($metadata) as $name) {
+            $this->checkMetadataName($name);
+        }
+
         $this->onPropertyChanged('metadata', $this->metadata, $metadata);
         $this->metadata = $metadata;
     }
@@ -135,6 +139,8 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
      */
     public function setMetadata(string $name, string $value): void
     {
+        $this->checkMetadataName($name);
+
         $new = $this->metadata;
         $new[$name] = $value;
 
@@ -149,6 +155,8 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
      */
     public function removeMetadata(string $name): void
     {
+        $this->checkMetadataName($name);
+
         $new = $this->metadata;
         unset($new[$name]);
 
@@ -165,11 +173,25 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
      */
     public function getMetadata(string $name): ?string
     {
+       $this->checkMetadataName($name);
+
         if (isset($this->metadata[$name])) {
             return $this->metadata[$name];
         }
 
         return null;
+    }
+
+    /**
+     * Check that all metadata name characters are authorized characters
+     *
+     * @param string $name of the metadata
+     */
+    private function checkMetadataName(string $name): void
+    {
+        if (preg_match('#[^a-z0-9.-]#', $name)) {
+            throw new \InvalidArgumentException("Valid characters for metadata name are lowercase letters, digits, dot and hyphen");
+        }
     }
 
     public function hydrate(array $data, ObjectManagerInterface $objectManager): void

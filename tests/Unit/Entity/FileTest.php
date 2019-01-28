@@ -74,13 +74,13 @@ class FileTest extends TestCase
             'metadata',
             [
                 [],
-                ['mymetadata1' => 'myvalue1'],
+                ['my-metadata1' => 'myvalue1'],
                 ['mymetadata2' => 'myvalue2', 'mymetadata3' => 'myvalue3']
             ]
         );
 
-        $sut->setAllMetadata(['mymetadata1' => 'myvalue1']);
-        $this->assertEquals(['mymetadata1' => 'myvalue1'], $sut->getAllMetadata());
+        $sut->setAllMetadata(['my-metadata1' => 'myvalue1']);
+        $this->assertEquals(['my-metadata1' => 'myvalue1'], $sut->getAllMetadata());
 
         $sut->setAllMetadata(['mymetadata2' => 'myvalue2', 'mymetadata3' => 'myvalue3']);
         $this->assertEquals(['mymetadata2' => 'myvalue2', 'mymetadata3' => 'myvalue3'], $sut->getAllMetadata());
@@ -95,16 +95,16 @@ class FileTest extends TestCase
             'metadata',
             [
                 [],
-                ['mymetadata1' => 'myvalue1'],
-                ['mymetadata1' => 'myvalue1', 'mymetadata2' => 'myvalue2']
+                ['my.metadata1' => 'myvalue1'],
+                ['my.metadata1' => 'myvalue1', 'mymetadata2' => 'myvalue2']
             ]
         );
 
-        $sut->setMetadata('mymetadata1', 'myvalue1');
-        $this->assertEquals(['mymetadata1' => 'myvalue1'], $sut->getAllMetadata());
+        $sut->setMetadata('my.metadata1', 'myvalue1');
+        $this->assertEquals(['my.metadata1' => 'myvalue1'], $sut->getAllMetadata());
 
         $sut->setMetadata('mymetadata2', 'myvalue2');
-        $this->assertEquals(['mymetadata1' => 'myvalue1', 'mymetadata2' => 'myvalue2'], $sut->getAllMetadata());
+        $this->assertEquals(['my.metadata1' => 'myvalue1', 'mymetadata2' => 'myvalue2'], $sut->getAllMetadata());
     }
 
     /**
@@ -403,5 +403,53 @@ class FileTest extends TestCase
 
         // Since @doesNotPerformAssertions doesn't allow to perform code coverage
         $this->assertTrue(true);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Valid characters for metadata name are lowercase letters, digits, dot and hyphen
+     *
+     * @covers ::checkMetadataName
+     */
+    public function testSetMetadataWithInvalidNameShouldThrowException(): void
+    {
+        $sut = new File();
+        $sut->setMetadata('myName', 'myvalue');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Valid characters for metadata name are lowercase letters, digits, dot and hyphen
+     *
+     * @covers ::checkMetadataName
+     */
+    public function testGetMetadataWithInvalidNameShouldThrowException(): void
+    {
+        $sut = new File();
+        $sut->getMetadata('my_name');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Valid characters for metadata name are lowercase letters, digits, dot and hyphen
+     *
+     * @covers ::checkMetadataName
+     */
+    public function testRemoveMetadataWithInvalidNameShouldThrowException(): void
+    {
+        $sut = new File();
+        $sut->removeMetadata('my,name');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Valid characters for metadata name are lowercase letters, digits, dot and hyphen
+     *
+     * @covers ::checkMetadataName
+     */
+    public function testsetAllMetadataWithInvalidNameShouldThrowException(): void
+    {
+        $sut = new File();
+        $sut->setAllMetadata(['myname' => 'myvalue', 'my:name' => 'myvalue']);
     }
 }

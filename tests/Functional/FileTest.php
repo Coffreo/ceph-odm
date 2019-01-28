@@ -21,7 +21,7 @@ class FileTest extends AbstractFunctionalTestCase
             ['myfilename.txt', null, ['filename' => 'myfilename.txt']],
             [null, null, []],
             [null, ['mymetadata' => 'myvalue'], ['mymetadata' => 'myvalue']],
-            ['myfilename.txt', ['mymetadata' => 'myvalue'], ['filename' => 'myfilename.txt', 'mymetadata' => 'myvalue']],
+            ['myfilename.txt', ['my.metadata-1' => 'myvalue'], ['filename' => 'myfilename.txt', 'my.metadata-1' => 'myvalue']],
         ];
     }
 
