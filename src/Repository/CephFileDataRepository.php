@@ -116,7 +116,7 @@ class CephFileDataRepository extends AbstractCephDataRepository
                 'Metadata' => $objectData['Metadata'] ?? []
             ];
         } catch (S3Exception $e) {
-            if ($e->getAwsErrorCode() != 404) {
+            if (!in_array($e->getAwsErrorCode(), ['NoSuchBucket', 'NoSuchKey'])) {
                 throw $e;
             }
         }
