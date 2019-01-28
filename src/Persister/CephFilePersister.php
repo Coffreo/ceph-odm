@@ -10,12 +10,12 @@ use Coffreo\CephOdm\Entity\Bucket;
  */
 class CephFilePersister extends AbstractCephPersister
 {
-    protected function saveCephData(array $data)
+    protected function saveCephData(array $data): void
     {
         $this->client->putObject($data);
     }
 
-    protected function deleteCephIdentifier(array $identifier)
+    protected function deleteCephIdentifier(array $identifier): void
     {
         if (isset($identifier['Bucket']) && $identifier['Bucket'] instanceof Bucket) {
             $identifier['Bucket'] = $identifier['Bucket']->getName();
