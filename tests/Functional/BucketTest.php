@@ -64,6 +64,9 @@ class BucketTest extends AbstractFunctionalTestCase
         $buckets = $repo->findBy(['name' => $bucketToFind]);
         $this->assertEquals([$expectedBucket], $buckets);
 
+        $buckets = $repo->findBy(['name' => 'myinexistentbucket']);
+        $this->assertEquals([], $buckets);
+
         $buckets = $repo->findBy(['name' => $bucketToFind], null, null, 1);
         $this->assertEquals([], $buckets);
 
@@ -84,6 +87,18 @@ class BucketTest extends AbstractFunctionalTestCase
 
         $buckets = $repo->findBy([], ['name' => -1], 3, 3);
         $this->assertEquals(array_slice($rsortedBuckets, 3), $buckets);
+    }
+
+    public function testFindWithInexistentBucket(): void
+    {
+        $repo = $this->objectManager->getRepository(Bucket::class);
+        $this->assertNull($repo->find(['myinexistentbucket']));
+    }
+
+    public function testFindOneByWithInexistentBucket(): void
+    {
+        $repo = $this->objectManager->getRepository(Bucket::class);
+        $this->assertNull($repo->findOneBy(['name' => 'myinexistentbucket']));
     }
 
     public function testRemoveBucket(): void
