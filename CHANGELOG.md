@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Master
+
+# 0.1.1
 * Add functional tests
 * Catch correctly S3 client 404 exception
 * Fix identifier when deleting a file
