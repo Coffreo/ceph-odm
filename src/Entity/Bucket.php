@@ -26,7 +26,7 @@ class Bucket implements HydratableInterface, IdentifiableInterface, LoadMetadata
     /**
      * @codeCoverageIgnore
      */
-    public function __construct(?string $name = null)
+    public function __construct(string $name)
     {
         $this->name = $name;
     }

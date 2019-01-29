@@ -20,7 +20,7 @@ class BucketTest extends TestCase
      */
     public function testHydrate(): void
     {
-        $sut = new Bucket();
+        $sut = new Bucket('mybucketname');
         $sut->hydrate(['Name' => 'mybucketname'], $this->createMock(ObjectManagerInterface::class));
 
         $this->assertEquals('mybucketname', $sut->getName());
@@ -57,7 +57,7 @@ class BucketTest extends TestCase
      */
     public function testPrepareUpdateChangeSetShouldThrowException(): void
     {
-        $sut = new Bucket();
+        $sut = new Bucket('mybucketname');
         $sut->prepareUpdateChangeSet($this->createMock(ChangeSet::class));
     }
 }
