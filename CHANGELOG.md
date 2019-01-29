@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Master
+* Fix File getter return types
+* Disallow bucket without name
 * Fix typos in tests
 * Fix wrong test class name
 * Throw an exception when using a non-existent bucket
