@@ -4,7 +4,9 @@
 namespace Coffreo\CephOdm\Persister;
 
 
+use Aws\S3\Exception\S3Exception;
 use Aws\S3\S3Client;
+use Coffreo\CephOdm\Exception\Exception;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
 use Doctrine\SkeletonMapper\Persister\BasicObjectPersister;
 use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
@@ -35,7 +37,11 @@ abstract class AbstractCephPersister extends BasicObjectPersister
     {
         $data = $this->preparePersistChangeSet($object);
 
-        $this->saveCephData($data);
+        try {
+            $this->saveCephData($data);
+        } catch (S3Exception $e) {
+            $this->handleS3Exception($object, $e);
+        }
 
         return $data;
     }
@@ -44,7 +50,11 @@ abstract class AbstractCephPersister extends BasicObjectPersister
     {
         $data = $this->prepareUpdateChangeSet($object, $changeSet);
 
-        $this->saveCephData($data);
+        try {
+            $this->saveCephData($data);
+        } catch (S3Exception $e) {
+            $this->handleS3Exception($object, $e);
+        }
 
         return $data;
     }
@@ -52,9 +62,35 @@ abstract class AbstractCephPersister extends BasicObjectPersister
     public function removeObject($object): void
     {
         $identifier = $this->getObjectIdentifier($object);
-        $this->deleteCephIdentifier($identifier);
+
+        try {
+            $this->deleteCephIdentifier($identifier);
+        } catch (S3Exception $e) {
+            $this->handleS3Exception($object, $e);
+        }
+    }
+
+    /**
+     * Transform S3Exception into library dedicated exception in some cases
+     */
+    private function handleS3Exception($object, S3Exception $e): void
+    {
+        if ($e->getAwsErrorCode() == 'NoSuchBucket') {
+            throw new Exception(
+                sprintf("Bucket %s doesn't exist", $this->extractBucketName($object) ?: '[name not found]'),
+                Exception::BUCKET_NOT_FOUND,
+                $e
+            );
+        }
+
+        throw $e;
     }
 
     abstract protected function saveCephData(array $data): void;
     abstract protected function deleteCephIdentifier(array $identifier): void;
+
+    /**
+     * Extract bucket name from an object
+     */
+    abstract protected function extractBucketName($object): ?string;
 }

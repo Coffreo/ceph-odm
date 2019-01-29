@@ -112,6 +112,17 @@ class BucketTest extends AbstractFunctionalTestCase
         $this->assertFalse($this->doesBucketExist($bucketToRemove));
     }
 
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Bucket mynonexistentbucket doesn't exist
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::BUCKET_NOT_FOUND
+     */
+    public function testRemoveNonExistentBucketShouldThrowException(): void
+    {
+        $this->objectManager->remove(new Bucket('mynonexistentbucket'));
+        $this->objectManager->flush();
+    }
+
     private function doesBucketExist(string $bucketName): bool
     {
         $buckets = $this->client->listBuckets();
