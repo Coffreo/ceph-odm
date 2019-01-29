@@ -18,7 +18,7 @@ use Coffreo\CephOdm\Test\DummyS3Client;
 /**
  * @coversDefaultClass \Coffreo\CephOdm\Persister\CephBucketPersister
  */
-class CephBucketDataPersisterTest extends TestCase
+class CephBucketPersisterTest extends TestCase
 {
     /**
      * @var S3Client|MockObject
