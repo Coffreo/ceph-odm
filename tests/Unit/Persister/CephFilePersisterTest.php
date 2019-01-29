@@ -113,7 +113,7 @@ class CephFilePersisterTest extends TestCase
         $cmd = $this->createMock(CommandInterface::class);
         $object1 = new File();
         $object1->setBucket(new Bucket('mynonexistentbucket'));
-        //$object2 = new File();
+        $object2 = new File();
         $object3 = new File();
         $object3->setBucket(new Bucket(''));
         $object4 = new \stdClass();
@@ -122,7 +122,7 @@ class CephFilePersisterTest extends TestCase
             [$object1, new \RuntimeException('myexceptionmessage', 5), \RuntimeException::class, 'myexceptionmessage', 5],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'mycode']), S3Exception::class, 'myS3exceptionmessage', 0],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket mynonexistentbucket doesn't exist", Exception::BUCKET_NOT_FOUND],
-            //[$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
+            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
             [$object3, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
             [$object4, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
         ];

@@ -38,14 +38,14 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     /**
      * Binary data
      *
-     * @var string
+     * @var string|null
      */
     private $bin;
 
     /**
      * Bucket
      *
-     * @var Bucket
+     * @var Bucket|null
      */
     private $bucket;
 
@@ -88,7 +88,7 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     /**
      * @codeCoverageIgnore
      */
-    public function getBin(): string
+    public function getBin(): ?string
     {
         return $this->bin;
     }
@@ -102,7 +102,7 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     /**
      * @codeCoverageIgnore
      */
-    public function getBucket(): Bucket
+    public function getBucket(): ?Bucket
     {
         return $this->bucket;
     }
