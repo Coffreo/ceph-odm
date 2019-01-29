@@ -164,20 +164,20 @@ class FileTest extends AbstractFunctionalTestCase
         $this->assertEquals([], $files);
     }
 
-    public function testFindWithInexistentFile(): void
+    public function testFindWithNonExistentFile(): void
     {
         $repo = $this->objectManager->getRepository(File::class);
-        $this->assertNull($repo->find(['myinexistentbucket', 'myinexistentfile']));
-        $this->assertNull($repo->find(['mybucket', 'myinexistentfile']));
-        $this->assertNull($repo->find(['myinexistentbucket', 'myid1']));
+        $this->assertNull($repo->find(['mynonexistentbucket', 'mynonexistentfile']));
+        $this->assertNull($repo->find(['mybucket', 'mynonexistentfile']));
+        $this->assertNull($repo->find(['mynonexistentbucket', 'myid1']));
     }
 
-    public function testFindOneByWithInexistentFile(): void
+    public function testFindOneByWithNonExistentFile(): void
     {
         $repo = $this->objectManager->getRepository(File::class);
-        $this->assertNull($repo->findOneBy(['bucket' => 'myinexistentbucket', 'id' => 'myinexistentfile']));
-        $this->assertNull($repo->findOneBy(['bucket' => 'mybucket', 'id' => 'myinexistentfile']));
-        $this->assertNull($repo->findOneBy(['bucket' => 'myinexistentbucket', 'id' => 'myid1']));
+        $this->assertNull($repo->findOneBy(['bucket' => 'mynonexistentbucket', 'id' => 'mynonexistentfile']));
+        $this->assertNull($repo->findOneBy(['bucket' => 'mybucket', 'id' => 'mynonexistentfile']));
+        $this->assertNull($repo->findOneBy(['bucket' => 'mynonexistentbucket', 'id' => 'myid1']));
     }
 
     /**
