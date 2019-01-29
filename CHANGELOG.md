@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Fix typos in tests
 * Fix wrong test class name
 * Throw an exception when using a non-existent bucket
 * Add missing return types in some AbstractCephPersister methods
