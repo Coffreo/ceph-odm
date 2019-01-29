@@ -179,4 +179,51 @@ class FileTest extends AbstractFunctionalTestCase
         $this->assertNull($repo->findOneBy(['bucket' => 'mybucket', 'id' => 'myinexistentfile']));
         $this->assertNull($repo->findOneBy(['bucket' => 'myinexistentbucket', 'id' => 'myid1']));
     }
+
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Bucket mynonexistentbucket doesn't exist
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::BUCKET_NOT_FOUND
+     */
+    public function testPersistInNonExistentBucketShouldThrowException(): void
+    {
+        $file = new File();
+        $file->setBucket(new Bucket('mynonexistentbucket'));
+        $file->assignIdentifier(['Key' => 'mykey']);
+        $file->setBin('mydata');
+
+        $this->objectManager->persist($file);
+        $this->objectManager->flush();
+    }
+
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Bucket mynonexistentbucket doesn't exist
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::BUCKET_NOT_FOUND
+     */
+    public function testUpdateInNonExistentBucketShouldThrowException(): void
+    {
+        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid', 'Body' => 'mydata']);
+
+        $repo = $this->objectManager->getRepository(File::class);
+        $file = $repo->find(['mybucket', 'myid']);
+
+        $file->setBucket(new Bucket('mynonexistentbucket'));
+        $this->objectManager->flush();
+    }
+
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Bucket mynonexistentbucket doesn't exist
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::BUCKET_NOT_FOUND
+     */
+    public function testRemoveInNonExistentBucketShouldThrowException(): void
+    {
+        $file = new File();
+        $file->setBucket(new Bucket('mynonexistentbucket'));
+        $file->assignIdentifier(['Key' => 'mykey']);
+
+        $this->objectManager->remove($file);
+        $this->objectManager->flush();
+    }
 }

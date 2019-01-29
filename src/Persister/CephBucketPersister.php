@@ -3,6 +3,7 @@
 
 namespace Coffreo\CephOdm\Persister;
 
+use Coffreo\CephOdm\Entity\Bucket;
 use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
 
 /**
@@ -27,5 +28,10 @@ class CephBucketPersister extends AbstractCephPersister
     protected function deleteCephIdentifier(array $identifier): void
     {
         $this->client->deleteBucket($identifier);
+    }
+
+    protected function extractBucketName($object): ?string
+    {
+        return $object instanceof Bucket ? $object->getName() : null;
     }
 }

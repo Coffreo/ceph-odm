@@ -4,8 +4,11 @@
 namespace Coffreo\CephOdm\Test\Unit\Persister;
 
 
+use Aws\CommandInterface;
+use Aws\S3\Exception\S3Exception;
 use Aws\S3\S3Client;
 use Coffreo\CephOdm\Entity\Bucket;
+use Coffreo\CephOdm\Exception\Exception;
 use Coffreo\CephOdm\Persister\CephBucketPersister;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
 use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
@@ -111,5 +114,47 @@ class CephBucketDataPersisterTest extends TestCase
             ->with(['myidentifier1' => 'myidentifier1value']);
 
         $sut->removeObject($bucket);
+    }
+
+    public function providerRemoveObjectWithExceptionShouldThrowException(): array
+    {
+        $cmd = $this->createMock(CommandInterface::class);
+        $object1 = new Bucket('mynonexistentbucket');
+        $object2 = new Bucket('');
+        $object3 = new \stdClass();
+
+        return [
+            [$object1, new \RuntimeException('myexceptionmessage', 5), \RuntimeException::class, 'myexceptionmessage', 5],
+            [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'mycode']), S3Exception::class, 'myS3exceptionmessage', 0],
+            [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket mynonexistentbucket doesn't exist", Exception::BUCKET_NOT_FOUND],
+            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
+            [$object3, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND]
+        ];
+    }
+
+    /**
+     * @dataProvider providerRemoveObjectWithExceptionShouldThrowException
+     *
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::removeObject
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::handleS3Exception
+     * @covers ::extractBucketName
+     */
+    public function testRemoveObjectWithExceptionShouldThrowException($object, \Exception $originalException, string $expectedExceptionClass, string $expectedExceptionMessage, $expectedCode): void
+    {
+        $sut = $this
+            ->getMockBuilder(CephBucketPersister::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getObjectIdentifier', 'deleteCephIdentifier'])
+            ->getMock();
+
+        $sut
+            ->method('deleteCephIdentifier')
+            ->willThrowException($originalException);
+
+        $this->expectException($expectedExceptionClass);
+        $this->expectExceptionMessage($expectedExceptionMessage);
+        $this->expectExceptionCode($expectedCode);
+
+        $sut->removeObject($object);
     }
 }

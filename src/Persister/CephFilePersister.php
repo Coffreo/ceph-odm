@@ -4,6 +4,7 @@
 namespace Coffreo\CephOdm\Persister;
 
 use Coffreo\CephOdm\Entity\Bucket;
+use Coffreo\CephOdm\Entity\File;
 
 /**
  * Persister for Ceph file objects
@@ -22,5 +23,16 @@ class CephFilePersister extends AbstractCephPersister
         }
 
         $this->client->deleteObject($identifier);
+    }
+
+    protected function extractBucketName($object): ?string
+    {
+        if ($object instanceof File) {
+            if ($bucket = $object->getBucket()) {
+                return $bucket->getName();
+            }
+        }
+
+        return null;
     }
 }
