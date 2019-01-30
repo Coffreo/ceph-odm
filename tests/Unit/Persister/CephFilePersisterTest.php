@@ -7,6 +7,7 @@ use Aws\S3\S3Client;
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Entity\File;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
+use Doctrine\SkeletonMapper\UnitOfWork\Change;
 use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -44,6 +45,15 @@ class CephFilePersisterTest extends TestCase
     public function testPersistObject(): void
     {
         $file = $this->createMock(File::class);
+
+        $file
+            ->method('getBucket')
+            ->willReturn(new Bucket('mybucket'));
+
+        $file
+            ->method('getBin')
+            ->willReturn('mydata');
+
         $file
             ->expects($this->once())
             ->method('preparePersistChangeSet')
@@ -64,8 +74,16 @@ class CephFilePersisterTest extends TestCase
     public function testUpdateObject(): void
     {
         $changeSet = $this->createMock(ChangeSet::class);
-
         $file = $this->createMock(File::class);
+
+        $file
+            ->method('getBucket')
+            ->willReturn(new Bucket('mybucket'));
+
+        $file
+            ->method('getBin')
+            ->willReturn('mydata');
+
         $file
             ->expects($this->once())
             ->method('prepareUpdateChangeSet')
@@ -113,18 +131,16 @@ class CephFilePersisterTest extends TestCase
         $cmd = $this->createMock(CommandInterface::class);
         $object1 = new File();
         $object1->setBucket(new Bucket('mynonexistentbucket'));
-        $object2 = new File();
-        $object3 = new File();
-        $object3->setBucket(new Bucket(''));
-        $object4 = new \stdClass();
+        $object1->setBin('mydata');
+
+        $bucket = $this->createMock(Bucket::class);
+        $object2 = new DummyFile($bucket);
 
         return [
             [$object1, new \RuntimeException('myexceptionmessage', 5), \RuntimeException::class, 'myexceptionmessage', 5],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'mycode']), S3Exception::class, 'myS3exceptionmessage', 0],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket mynonexistentbucket doesn't exist", Exception::BUCKET_NOT_FOUND],
-            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
-            [$object3, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
-            [$object4, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
+            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND]
         ];
     }
 
@@ -204,5 +220,147 @@ class CephFilePersisterTest extends TestCase
         $this->expectExceptionCode($expectedCode);
 
         $sut->removeObject($object);
+    }
+
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Empty required property bucket
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::MISSING_REQUIRED_PROPERTY
+     *
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::checkRequiredProperties
+     */
+    public function testPersistObjectWithEmptyBucketShouldThrowException(): void
+    {
+        $sut = $this
+            ->getMockBuilder(CephFilePersister::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['preparePersistChangeSet'])
+            ->getMock();
+
+        $sut->persistObject(new File());
+    }
+
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Empty required property bin
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::MISSING_REQUIRED_PROPERTY
+     *
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::checkRequiredProperties
+     */
+    public function testPersistObjectWithEmptyBinShouldThrowException(): void
+    {
+        $sut = $this
+            ->getMockBuilder(CephFilePersister::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['preparePersistChangeSet'])
+            ->getMock();
+
+        $file = new File();
+        $file->setBucket(new Bucket('mybucket'));
+        $sut->persistObject($file);
+    }
+
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Empty required property bucket
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::MISSING_REQUIRED_PROPERTY
+     *
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::checkRequiredProperties
+     */
+    public function testUpdateObjectWithEmptyBucketShouldThrowException(): void
+    {
+        $sut = $this
+            ->getMockBuilder(CephFilePersister::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['preparePersistChangeSet'])
+            ->getMock();
+
+        $bucket = new Bucket('mybucket');
+        $file = new File();
+        $file->setBucket($bucket);
+        $file->setBin('mydata');
+
+        $changeSet = new ChangeSet($file, [new Change('bucket', $bucket, null)]);
+
+        $sut->updateObject($file, $changeSet);
+    }
+
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Empty required property bin
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::MISSING_REQUIRED_PROPERTY
+     *
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::checkRequiredProperties
+     */
+    public function testUpdateObjectWithEmptyBinShouldThrowException(): void
+    {
+        $sut = $this
+            ->getMockBuilder(CephFilePersister::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['preparePersistChangeSet'])
+            ->getMock();
+
+        $file = new File();
+        $file->setBucket(new Bucket('mybucket'));
+        $file->setBin('mydata');
+
+        $changeSet = new ChangeSet($file, [new Change('bin', 'mydata', null)]);
+
+        $sut->updateObject($file, $changeSet);
+    }
+
+    public function providerUpdateWithChangeSetWithNoChangeInstanceShouldThrowException(): array
+    {
+        return [
+            [new \stdClass(), "Change must be an instance of Change (actually stdClass)"]
+        ];
+    }
+
+    /**
+     * @dataProvider providerUpdateWithChangeSetWithNoChangeInstanceShouldThrowException
+     *
+     * @covers ::checkRequiredProperties
+     */
+    public function testUpdateWithChangeSetWithNoChangeInstanceShouldThrowException($change, string $expectedMessage): void
+    {
+        $sut = $this
+            ->getMockBuilder(CephFilePersister::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['prepareUpdateChangeSet'])
+            ->getMock();
+
+
+        $changeSet = $this->createMock(ChangeSet::class);
+        $changeSet
+            ->method('getChanges')
+            ->willReturn([$change]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        $file = new File();
+        $file->setBucket(new Bucket('mybucket'));
+        $file->setBin('mydata');
+        $sut->updateObject($file, $changeSet);
+    }
+}
+
+class DummyFile
+{
+    private $bucket;
+
+    public function __construct(?Bucket $bucket = null)
+    {
+        $this->bucket = $bucket;
+    }
+
+    public function getBucket(): Bucket
+    {
+        return $this->bucket;
+    }
+
+    public function getBin(): string
+    {
+        return 'mydata';
     }
 }

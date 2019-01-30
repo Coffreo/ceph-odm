@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Master
+* Authorize only A-Za-z0-9._- for bucket name
+* Throw exception when some required defined properties are empty
 * Fix File getter return types
 * Disallow bucket without name
 * Fix typos in tests

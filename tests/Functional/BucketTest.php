@@ -17,7 +17,7 @@ class BucketTest extends AbstractFunctionalTestCase
 
     public function testInsertBucket(): void
     {
-        $bucketToInsert = 'mybucket';
+        $bucketToInsert = 'My.bucket-with_authorized-CHARACTERS';
 
         $this->objectManager->persist(new Bucket($bucketToInsert));
         $this->objectManager->flush();

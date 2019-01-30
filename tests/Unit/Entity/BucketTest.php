@@ -60,4 +60,22 @@ class BucketTest extends TestCase
         $sut = new Bucket('mybucketname');
         $sut->prepareUpdateChangeSet($this->createMock(ChangeSet::class));
     }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Bucket name valid characters are [A-Za-z0-9._-]
+     */
+    public function testConstructorWithWrongNameShouldThrowException(): void
+    {
+        new Bucket('my:name');
+    }
+
+    /**
+     * @covers ::assignName
+     */
+    public function testConstructor(): void
+    {
+        $bucket = new Bucket('My.bucket-with_authorized-CHARACTERS');
+        $this->assertEquals('My.bucket-with_authorized-CHARACTERS', $bucket->getName());
+    }
 }

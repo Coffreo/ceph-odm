@@ -48,6 +48,10 @@ class CephBucketPersisterTest extends TestCase
             ->method('preparePersistChangeSet')
             ->willReturn(['Bucket' => 'mybucketname']);
 
+        $bucket
+            ->method('getName')
+            ->willReturn('mybucketname');
+
         $this->client
             ->expects($this->once())
             ->method('createBucket')
@@ -61,6 +65,7 @@ class CephBucketPersisterTest extends TestCase
      * @expectedExceptionMessage Missing bucket identifier
      *
      * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::persistObject
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::checkRequiredProperties
      * @covers ::saveCephData
      */
     public function testPersistObjectWithoutBucketDataShouldThrowException(): void
@@ -70,6 +75,10 @@ class CephBucketPersisterTest extends TestCase
             ->expects($this->once())
             ->method('preparePersistChangeSet')
             ->willReturn(['Anotherfield' => 'mybucketname']);
+
+        $bucket
+            ->method('getName')
+            ->willReturn('mybucketname');
 
         $this->client
             ->expects($this->never())
@@ -120,15 +129,13 @@ class CephBucketPersisterTest extends TestCase
     {
         $cmd = $this->createMock(CommandInterface::class);
         $object1 = new Bucket('mynonexistentbucket');
-        $object2 = new Bucket('');
-        $object3 = new \stdClass();
+        $object2 = new \stdClass();
 
         return [
             [$object1, new \RuntimeException('myexceptionmessage', 5), \RuntimeException::class, 'myexceptionmessage', 5],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'mycode']), S3Exception::class, 'myS3exceptionmessage', 0],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket mynonexistentbucket doesn't exist", Exception::BUCKET_NOT_FOUND],
-            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
-            [$object3, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND]
+            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND]
         ];
     }
 
@@ -157,4 +164,27 @@ class CephBucketPersisterTest extends TestCase
 
         $sut->removeObject($object);
     }
+
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Empty required property name
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::MISSING_REQUIRED_PROPERTY
+     *
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::checkRequiredProperties
+     */
+    public function testPersistObjectWithEmptyNameShouldThrowException(): void
+    {
+        $sut = $this
+            ->getMockBuilder(CephBucketPersister::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['preparePersistChangeSet'])
+            ->getMock();
+
+        $sut->persistObject($this->createMock(Bucket::class));
+    }
+}
+
+class DummyCephBucketPersister extends CephBucketPersister
+{
+    protected $requiredProperties = ['nonexistentproperty'];
 }
