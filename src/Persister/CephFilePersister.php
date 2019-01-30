@@ -11,6 +11,8 @@ use Coffreo\CephOdm\Entity\File;
  */
 class CephFilePersister extends AbstractCephPersister
 {
+    protected $requiredProperties = ['bucket', 'bin'];
+
     protected function saveCephData(array $data): void
     {
         $this->client->putObject($data);

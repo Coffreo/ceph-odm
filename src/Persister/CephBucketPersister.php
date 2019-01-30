@@ -11,6 +11,8 @@ use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
  */
 class CephBucketPersister extends AbstractCephPersister
 {
+    protected $requiredProperties = ['name'];
+
     protected function saveCephData(array $data): void
     {
         if (empty($data['Bucket'])) {

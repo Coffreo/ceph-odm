@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Throw exception when some required defined properties are empty
 * Fix File getter return types
 * Disallow bucket without name
 * Fix typos in tests

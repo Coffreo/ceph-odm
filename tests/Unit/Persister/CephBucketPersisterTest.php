@@ -48,6 +48,10 @@ class CephBucketPersisterTest extends TestCase
             ->method('preparePersistChangeSet')
             ->willReturn(['Bucket' => 'mybucketname']);
 
+        $bucket
+            ->method('getName')
+            ->willReturn('mybucketname');
+
         $this->client
             ->expects($this->once())
             ->method('createBucket')
@@ -61,6 +65,7 @@ class CephBucketPersisterTest extends TestCase
      * @expectedExceptionMessage Missing bucket identifier
      *
      * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::persistObject
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::checkRequiredProperties
      * @covers ::saveCephData
      */
     public function testPersistObjectWithoutBucketDataShouldThrowException(): void
@@ -70,6 +75,10 @@ class CephBucketPersisterTest extends TestCase
             ->expects($this->once())
             ->method('preparePersistChangeSet')
             ->willReturn(['Anotherfield' => 'mybucketname']);
+
+        $bucket
+            ->method('getName')
+            ->willReturn('mybucketname');
 
         $this->client
             ->expects($this->never())
@@ -157,4 +166,27 @@ class CephBucketPersisterTest extends TestCase
 
         $sut->removeObject($object);
     }
+
+    /**
+     * @expectedException \Coffreo\CephOdm\Exception\Exception
+     * @expectedExceptionMessage Empty required property name
+     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::MISSING_REQUIRED_PROPERTY
+     *
+     * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::checkRequiredProperties
+     */
+    public function testPersistObjectWithEmptyNameShouldThrowException(): void
+    {
+        $sut = $this
+            ->getMockBuilder(CephBucketPersister::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['preparePersistChangeSet'])
+            ->getMock();
+
+        $sut->persistObject(new Bucket(''));
+    }
+}
+
+class DummyCephBucketPersister extends CephBucketPersister
+{
+    protected $requiredProperties = ['nonexistentproperty'];
 }

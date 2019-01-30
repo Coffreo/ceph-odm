@@ -7,6 +7,9 @@ namespace Coffreo\CephOdm\Persister;
 use Aws\S3\Exception\S3Exception;
 use Aws\S3\S3Client;
 use Coffreo\CephOdm\Exception\Exception;
+use Coffreo\CephOdm\Extractor\ChangeSetExtractor;
+use Coffreo\CephOdm\Extractor\ExtractorInterface;
+use Coffreo\CephOdm\Extractor\GetterExtractor;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
 use Doctrine\SkeletonMapper\Persister\BasicObjectPersister;
 use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
@@ -24,6 +27,13 @@ abstract class AbstractCephPersister extends BasicObjectPersister
     protected $client;
 
     /**
+     * Object properties that must not be empty to insert/update the object
+     *
+     * @var array
+     */
+    protected $requiredProperties = [];
+
+    /**
      * @codeCoverageIgnore
      */
     public function __construct(S3Client $client, ObjectManagerInterface $objectManager, string $className)
@@ -37,6 +47,8 @@ abstract class AbstractCephPersister extends BasicObjectPersister
     {
         $data = $this->preparePersistChangeSet($object);
 
+        $this->checkRequiredProperties($object, new GetterExtractor());
+
         try {
             $this->saveCephData($data);
         } catch (S3Exception $e) {
@@ -49,6 +61,8 @@ abstract class AbstractCephPersister extends BasicObjectPersister
     public function updateObject($object, ChangeSet $changeSet): array
     {
         $data = $this->prepareUpdateChangeSet($object, $changeSet);
+
+        $this->checkRequiredProperties($changeSet, new ChangeSetExtractor());
 
         try {
             $this->saveCephData($data);
@@ -84,6 +98,28 @@ abstract class AbstractCephPersister extends BasicObjectPersister
         }
 
         throw $e;
+    }
+
+    /**
+     * Check that properties defined in requiredProperties are not empty for provided object
+     */
+    private function checkRequiredProperties($object, ExtractorInterface $extractor): void
+    {
+        foreach ($this->requiredProperties as $propertyName) {
+            try {
+                $extracted = $extractor->extract($object, $propertyName);
+            } catch (\InvalidArgumentException $e) {
+                if ($e->getCode() == 404) {
+                    continue;
+                }
+
+                throw $e;
+            }
+
+            if (empty($extracted)) {
+                throw new Exception(sprintf("Empty required property %s", $propertyName), Exception::MISSING_REQUIRED_PROPERTY);
+            }
+        }
     }
 
     abstract protected function saveCephData(array $data): void;
