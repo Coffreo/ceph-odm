@@ -338,7 +338,10 @@ class CephFilePersisterTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage($expectedMessage);
 
-        $sut->updateObject(new DummyFile(), $changeSet);
+        $file = new File();
+        $file->setBucket(new Bucket('mybucket'));
+        $file->setBin('mydata');
+        $sut->updateObject($file, $changeSet);
     }
 }
 
