@@ -133,18 +133,14 @@ class CephFilePersisterTest extends TestCase
         $object1->setBucket(new Bucket('mynonexistentbucket'));
         $object1->setBin('mydata');
 
-        $object2 = new File();
-        $object2->setBucket(new Bucket(''));
-        $object2->setBin('mydata');
-
-        $object3 = new DummyFile();
+        $bucket = $this->createMock(Bucket::class);
+        $object2 = new DummyFile($bucket);
 
         return [
             [$object1, new \RuntimeException('myexceptionmessage', 5), \RuntimeException::class, 'myexceptionmessage', 5],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'mycode']), S3Exception::class, 'myS3exceptionmessage', 0],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket mynonexistentbucket doesn't exist", Exception::BUCKET_NOT_FOUND],
-            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
-            [$object3, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
+            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND]
         ];
     }
 
@@ -348,9 +344,16 @@ class CephFilePersisterTest extends TestCase
 
 class DummyFile
 {
+    private $bucket;
+
+    public function __construct(?Bucket $bucket = null)
+    {
+        $this->bucket = $bucket;
+    }
+
     public function getBucket(): Bucket
     {
-        return new Bucket('');
+        return $this->bucket;
     }
 
     public function getBin(): string

@@ -28,7 +28,7 @@ class Bucket implements HydratableInterface, IdentifiableInterface, LoadMetadata
      */
     public function __construct(string $name)
     {
-        $this->name = $name;
+        $this->assignName($name);
     }
 
     /**
@@ -66,6 +66,16 @@ class Bucket implements HydratableInterface, IdentifiableInterface, LoadMetadata
      */
     public function assignIdentifier(array $identifier): void
     {
-        $this->name = $identifier['Name'];
+        $this->assignName($identifier['Name']);
+    }
+
+    private function assignName(string $name): void
+    {
+        $validChars = '[A-Za-z0-9._-]';
+        if (!preg_match(sprintf('#^%s+$#', $validChars), $name)) {
+            throw new \InvalidArgumentException(sprintf("Bucket name valid characters are %s", $validChars));
+        }
+
+        $this->name = $name;
     }
 }

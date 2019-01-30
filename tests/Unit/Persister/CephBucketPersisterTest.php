@@ -129,15 +129,13 @@ class CephBucketPersisterTest extends TestCase
     {
         $cmd = $this->createMock(CommandInterface::class);
         $object1 = new Bucket('mynonexistentbucket');
-        $object2 = new Bucket('');
-        $object3 = new \stdClass();
+        $object2 = new \stdClass();
 
         return [
             [$object1, new \RuntimeException('myexceptionmessage', 5), \RuntimeException::class, 'myexceptionmessage', 5],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'mycode']), S3Exception::class, 'myS3exceptionmessage', 0],
             [$object1, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket mynonexistentbucket doesn't exist", Exception::BUCKET_NOT_FOUND],
-            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND],
-            [$object3, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND]
+            [$object2, new S3Exception('myS3exceptionmessage', $cmd, ['code' => 'NoSuchBucket']), Exception::class, "Bucket [name not found] doesn't exist", Exception::BUCKET_NOT_FOUND]
         ];
     }
 
@@ -182,7 +180,7 @@ class CephBucketPersisterTest extends TestCase
             ->setMethods(['preparePersistChangeSet'])
             ->getMock();
 
-        $sut->persistObject(new Bucket(''));
+        $sut->persistObject($this->createMock(Bucket::class));
     }
 }
 
