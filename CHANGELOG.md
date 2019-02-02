@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Add tests and update README for object cloning
 
 # 0.2.0
 * Use filename as a full metadata

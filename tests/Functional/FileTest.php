@@ -65,6 +65,50 @@ class FileTest extends AbstractFunctionalTestCase
         $this->assertEquals(['filename' => 'myfilename.txt'], $object['Metadata']);
     }
 
+    public function testPersistWithUpdateFileBucketShouldCreateANewFile(): void
+    {
+        $this->client->createBucket(['Bucket' => 'mybucket2']);
+        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey', 'Body' => 'mydata']);
+
+        $repo = $this->objectManager->getRepository(File::class);
+        $file = $repo->find(['mybucket', 'mykey']);
+        $this->objectManager->detach($file);
+
+        $file->setBucket(new Bucket('mybucket2'));
+        $file->setBin('mydata2');
+        $file->setMetadata('mymeta', 'myvalue');
+        $this->objectManager->persist($file);
+        $this->objectManager->flush();
+
+        $object1 = $this->client->getObject(['Bucket' => 'mybucket', 'Key' => 'mykey']);
+        $this->assertEquals([], $object1['Metadata']);
+
+        $object2 = $this->client->getObject(['Bucket' => 'mybucket2', 'Key' => $file->getId()]);
+        $this->assertEquals('myvalue', $object2['Metadata']['mymeta']);
+        $this->assertEquals('mydata2', (string)$object2['Body']);
+    }
+
+    public function testPersistWithUpdateFileIdShouldCreateANewFile(): void
+    {
+        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey', 'Body' => 'mydata']);
+
+        $repo = $this->objectManager->getRepository(File::class);
+        $file = $repo->find(['mybucket', 'mykey']);
+        $this->objectManager->detach($file);
+
+        $file->setBin('mydata2');
+        $file->setMetadata('mymeta', 'myvalue');
+        $this->objectManager->persist($file);
+        $this->objectManager->flush();
+
+        $object1 = $this->client->getObject(['Bucket' => 'mybucket', 'Key' => 'mykey']);
+        $this->assertEquals([], $object1['Metadata']);
+
+        $object2 = $this->client->getObject(['Bucket' => 'mybucket', 'Key' => $file->getId()]);
+        $this->assertEquals('myvalue', $object2['Metadata']['mymeta']);
+        $this->assertEquals('mydata2', (string)$object2['Body']);
+    }
+
     /**
      * @expectedException Aws\S3\Exception\S3Exception
      * @expectedExceptionMessage 404 Not Found
