@@ -18,25 +18,21 @@ class FileTest extends AbstractFunctionalTestCase
     public function providerInsertFile(): array
     {
         return [
-            ['myfilename.txt', null, ['filename' => 'myfilename.txt']],
-            [null, null, []],
-            [null, ['mymetadata' => 'myvalue'], ['mymetadata' => 'myvalue']],
-            ['myfilename.txt', ['my.metadata-1' => 'myvalue'], ['filename' => 'myfilename.txt', 'my.metadata-1' => 'myvalue']],
+            [null, []],
+            [['filename' => 'myfilename.txt'], ['filename' => 'myfilename.txt']],
+            [['mymetadata' => 'myvalue'], ['mymetadata' => 'myvalue']],
+            [['my.metadata-1' => 'myvalue', 'filename' => 'myfilename.txt'], ['filename' => 'myfilename.txt', 'my.metadata-1' => 'myvalue']],
         ];
     }
 
     /**
      * @dataProvider providerInsertFile
      */
-    public function testInsertFile(?string $filename, ?array $metadata, array $expectedMetadata): void
+    public function testInsertFile(?array $metadata, array $expectedMetadata): void
     {
         $file = new File();
         $file->setBucket(new Bucket('mybucket'));
         $file->setBin('mydata');
-
-        if ($filename) {
-            $file->setFilename($filename);
-        }
 
         if ($metadata) {
             $file->setAllMetadata($metadata);
@@ -61,12 +57,12 @@ class FileTest extends AbstractFunctionalTestCase
         $file = $repo->find(['mybucket', 'mykey']);
 
         $file->setBin('mynewdata');
-        $file->setMetadata('mymetadata', 'myvalue');
+        $file->setMetadata('filename', 'myfilename.txt');
         $this->objectManager->flush();
 
         $object = $this->client->getObject(['Bucket' => 'mybucket', 'Key' => 'mykey']);
         $this->assertEquals('mynewdata', $object['Body']);
-        $this->assertEquals(['mymetadata' => 'myvalue'], $object['Metadata']);
+        $this->assertEquals(['filename' => 'myfilename.txt'], $object['Metadata']);
     }
 
     /**
@@ -112,15 +108,14 @@ class FileTest extends AbstractFunctionalTestCase
         $expectedFile3->setBucket($bucket);
         $expectedFile3->assignIdentifier(['Key' => 'myid3']);
         $expectedFile3->setBin('mybody3');
-        $expectedFile3->setFilename('myfile3.txt');
-        $expectedFile3->setAllMetadata(['mymetadata' => 'myvalue2']);
+        $expectedFile3->setAllMetadata(['filename' => 'myfile3.txt', 'mymetadata' => 'myvalue2']);
         $expectedFile3->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $expectedFile4 = new File();
         $expectedFile4->setBucket($bucket2);
         $expectedFile4->assignIdentifier(['Key' => 'myid2']);
         $expectedFile4->setBin('mybody4');
-        $expectedFile4->setFilename('myfile4.txt');
+        $expectedFile4->setMetadata('filename', 'myfile4.txt');
         $expectedFile4->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid1', 'Body' => 'mybody1', 'Metadata' => ['mymetadata' => 'myvalue']]);

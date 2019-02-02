@@ -21,20 +21,6 @@ use Ramsey\Uuid\Uuid;
 class FileTest extends TestCase
 {
     /**
-     * @covers ::setFilename
-     */
-    public function testSetFilename(): void
-    {
-        $sut = $this->createSutForTestingSetter('filename', [null, 'myfilename', null]);
-
-        $sut->setFilename('myfilename');
-        $this->assertEquals('myfilename', $sut->getFilename());
-
-        $sut->setFilename(null);
-        $this->assertEquals(null, $sut->getFilename());
-    }
-
-    /**
      * @covers ::setBin
      */
     public function testSetBin(): void
@@ -74,13 +60,13 @@ class FileTest extends TestCase
             'metadata',
             [
                 [],
-                ['my-metadata1' => 'myvalue1'],
+                ['filename' => 'myfilename'],
                 ['mymetadata2' => 'myvalue2', 'mymetadata3' => 'myvalue3']
             ]
         );
 
-        $sut->setAllMetadata(['my-metadata1' => 'myvalue1']);
-        $this->assertEquals(['my-metadata1' => 'myvalue1'], $sut->getAllMetadata());
+        $sut->setAllMetadata(['filename' => 'myfilename']);
+        $this->assertEquals(['filename' => 'myfilename'], $sut->getAllMetadata());
 
         $sut->setAllMetadata(['mymetadata2' => 'myvalue2', 'mymetadata3' => 'myvalue3']);
         $this->assertEquals(['mymetadata2' => 'myvalue2', 'mymetadata3' => 'myvalue3'], $sut->getAllMetadata());
@@ -96,15 +82,15 @@ class FileTest extends TestCase
             [
                 [],
                 ['my.metadata1' => 'myvalue1'],
-                ['my.metadata1' => 'myvalue1', 'mymetadata2' => 'myvalue2']
+                ['my.metadata1' => 'myvalue1', 'filename' => 'myfilename']
             ]
         );
 
         $sut->setMetadata('my.metadata1', 'myvalue1');
         $this->assertEquals(['my.metadata1' => 'myvalue1'], $sut->getAllMetadata());
 
-        $sut->setMetadata('mymetadata2', 'myvalue2');
-        $this->assertEquals(['my.metadata1' => 'myvalue1', 'mymetadata2' => 'myvalue2'], $sut->getAllMetadata());
+        $sut->setMetadata('filename', 'myfilename');
+        $this->assertEquals(['my.metadata1' => 'myvalue1', 'filename' => 'myfilename'], $sut->getAllMetadata());
     }
 
     /**
@@ -116,7 +102,7 @@ class FileTest extends TestCase
             'metadata',
             [
                 [],
-                ['mymetadata1' => 'myvalue1', 'mymetadata2' => 'myvalue2'],
+                ['filename' => 'myfilename', 'mymetadata2' => 'myvalue2'],
                 ['mymetadata2' => 'myvalue2'],
                 ['mymetadata2' => 'myvalue2'],
                 [],
@@ -124,10 +110,10 @@ class FileTest extends TestCase
             ]
         );
 
-        $sut->setAllMetadata(['mymetadata1' => 'myvalue1', 'mymetadata2' => 'myvalue2']);
-        $sut->removeMetadata('mymetadata1');
+        $sut->setAllMetadata(['filename' => 'myfilename', 'mymetadata2' => 'myvalue2']);
+        $sut->removeMetadata('filename');
         $this->assertEquals(['mymetadata2' => 'myvalue2'], $sut->getAllMetadata());
-        $sut->removeMetadata('mymetadata1');
+        $sut->removeMetadata('filename');
         $this->assertEquals(['mymetadata2' => 'myvalue2'], $sut->getAllMetadata());
         $sut->removeMetadata('mymetadata2');
         $this->assertEquals([], $sut->getAllMetadata());
@@ -171,9 +157,9 @@ class FileTest extends TestCase
     public function testGetMetadata(): void
     {
         $sut = new File();
-        $sut->setAllMetadata(['mymetadata1' => 'myvalue1']);
+        $sut->setAllMetadata(['filename' => 'myfilename']);
 
-        $this->assertEquals('myvalue1', $sut->getMetadata('mymetadata1'));
+        $this->assertEquals('myfilename', $sut->getMetadata('filename'));
         $this->assertEquals(null, $sut->getMetadata('mymetadata2'));
     }
 
@@ -186,34 +172,23 @@ class FileTest extends TestCase
             [
                 ['Key' => 'myid', 'Bucket' => 'mybucketname', 'Body' => $streamMock],
                 'myid',
-                null,
                 'mybucketname',
                 'mybinarycontent',
                 []
-            ],
-            [
-                ['Key' => 'myid', 'Bucket' => 'mybucketname', 'Body' => $streamMock, 'Metadata' => ['mymetadata1' => 'myvalue1']],
-                'myid',
-                null,
-                'mybucketname',
-                'mybinarycontent',
-                ['mymetadata1' => 'myvalue1']
-            ],
-            [
-                ['Key' => 'myid', 'Bucket' => 'mybucketname', 'Body' => $streamMock, 'Metadata' => ['mymetadata1' => 'myvalue1', 'filename' => 'myfilename']],
-                'myid',
-                'myfilename',
-                'mybucketname',
-                'mybinarycontent',
-                ['mymetadata1' => 'myvalue1']
             ],
             [
                 ['Key' => 'myid', 'Bucket' => 'mybucketname', 'Body' => $streamMock, 'Metadata' => ['filename' => 'myfilename']],
                 'myid',
-                'myfilename',
                 'mybucketname',
                 'mybinarycontent',
-                []
+                ['filename' => 'myfilename']
+            ],
+            [
+                ['Key' => 'myid', 'Bucket' => 'mybucketname', 'Body' => $streamMock, 'Metadata' => ['mymetadata1' => 'myvalue1', 'filename' => 'myfilename']],
+                'myid',
+                'mybucketname',
+                'mybinarycontent',
+                ['mymetadata1' => 'myvalue1', 'filename' => 'myfilename']
             ]
         ];
     }
@@ -225,7 +200,6 @@ class FileTest extends TestCase
     public function testHydrate(
         array $data,
         string $expectedId,
-        ?string $expectedFilename,
         string $expectedBucketName,
         string $expectedBin,
         array $expectedMetadata
@@ -235,7 +209,6 @@ class FileTest extends TestCase
         $sut->hydrate($data, $this->createMock(ObjectManager::class));
 
         $this->assertEquals($expectedId, $sut->getId());
-        $this->assertEquals($expectedFilename, $sut->getFilename());
         $this->assertEquals($expectedBucketName, $sut->getBucket()->getName());
         $this->assertEquals($expectedBin, $sut->getBin());
         $this->assertEquals($expectedMetadata, $sut->getAllMetadata());
@@ -275,10 +248,10 @@ class FileTest extends TestCase
     public function providerPreparePersistChangeSet(): array
     {
         return [
-            ['mybucketname', 'myid', 'mybinarycontent', 'myfilename', [], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['filename' => 'myfilename']]],
-            ['mybucketname', 'myid', 'mybinarycontent', null, [], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent']],
-            ['mybucketname', 'myid', 'mybinarycontent', 'myfilename', ['mymetadata1' => 'myvalue1'], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['filename' => 'myfilename', 'mymetadata1' => 'myvalue1']]],
-            ['mybucketname', 'myid', 'mybinarycontent', null, ['mymetadata1' => 'myvalue1'], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['mymetadata1' => 'myvalue1']]]
+            ['mybucketname', 'myid', 'mybinarycontent', ['filename' => 'myfilename'], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['filename' => 'myfilename']]],
+            ['mybucketname', 'myid', 'mybinarycontent', [], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent']],
+            ['mybucketname', 'myid', 'mybinarycontent', ['filename' => 'myfilename', 'mymetadata1' => 'myvalue1'], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['filename' => 'myfilename', 'mymetadata1' => 'myvalue1']]],
+            ['mybucketname', 'myid', 'mybinarycontent', ['mymetadata1' => 'myvalue1'], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['mymetadata1' => 'myvalue1']]]
         ];
     }
 
@@ -290,7 +263,6 @@ class FileTest extends TestCase
         string $bucketName,
         string $id,
         string $bin,
-        ?string $filename,
         array $metadata,
         array $expectedReturn
     ): void
@@ -298,7 +270,6 @@ class FileTest extends TestCase
         $sut = new File();
         $sut->setBucket(new Bucket($bucketName));
         $sut->setBin($bin);
-        $sut->setFilename($filename);
         $sut->setAllMetadata($metadata);
 
         $actualReturn = $sut->preparePersistChangeSet();
@@ -322,17 +293,21 @@ class FileTest extends TestCase
     {
         $binChange = $this->createMock(Change::class);
         $binChange->method('getNewValue')->willReturn('mynewbinarycontent');
-        $filenameChange = $this->createMock(Change::class);
-        $filenameChange->method('getNewValue')->willReturn('mynewfilename');
-        $metadataChange = $this->createMock(Change::class);
-        $metadataChange->method('getNewValue')->willReturn(['mymetadata1' => 'mynewvalue']);
+        $metadataChange1 = $this->createMock(Change::class);
+        $metadataChange1->method('getNewValue')->willReturn(['mymetadata1' => 'mynewvalue']);
+        $metadataChange2 = $this->createMock(Change::class);
+        $metadataChange2->method('getNewValue')->willReturn(['filename' => 'mynewfilename', 'mymetadata1' => 'mynewvalue']);
+        $metadataChange3 = $this->createMock(Change::class);
+        $metadataChange3->method('getNewValue')->willReturn(['filename' => 'mynewfilename']);
 
         return [
             [['bin' => $binChange], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mynewbinarycontent']],
-            [['filename' => $filenameChange], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Metadata' => ['filename' => 'mynewfilename']]],
-            [['metadata' => $metadataChange], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Metadata' => ['mymetadata1' => 'mynewvalue']]],
-            [['filename' => $filenameChange], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Metadata' => ['filename' => 'mynewfilename']]],
-            [['bin' => $binChange, 'metadata' => $metadataChange, 'filename' => $filenameChange], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mynewbinarycontent', 'Metadata' => ['filename' => 'mynewfilename', 'mymetadata1' => 'mynewvalue']]]
+            [['metadata' => $metadataChange1], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Metadata' => ['mymetadata1' => 'mynewvalue']]],
+            [['metadata' => $metadataChange2], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Metadata' => ['filename' => 'mynewfilename', 'mymetadata1' => 'mynewvalue']]],
+                [['metadata' => $metadataChange3], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Metadata' => ['filename' => 'mynewfilename']]],
+            [['bin' => $binChange, 'metadata' => $metadataChange1], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mynewbinarycontent', 'Metadata' => ['mymetadata1' => 'mynewvalue']]],
+            [['bin' => $binChange, 'metadata' => $metadataChange2], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mynewbinarycontent', 'Metadata' => ['filename' => 'mynewfilename', 'mymetadata1' => 'mynewvalue']]],
+            [['bin' => $binChange, 'metadata' => $metadataChange3], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mynewbinarycontent', 'Metadata' => ['filename' => 'mynewfilename']]]
         ];
     }
 
