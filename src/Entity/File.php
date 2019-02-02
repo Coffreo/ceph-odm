@@ -29,13 +29,6 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     private $id;
 
     /**
-     * Filename
-     *
-     * @var string|null
-     */
-    private $filename;
-
-    /**
      * Binary data
      *
      * @var string|null
@@ -69,20 +62,6 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     public function getId(): ?string
     {
         return $this->id;
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    public function getFilename(): ?string
-    {
-        return $this->filename;
-    }
-
-    public function setFilename(?string $filename): void
-    {
-        $this->onPropertyChanged('filename', $this->filename, $filename);
-        $this->filename = $filename;
     }
 
     /**
@@ -197,12 +176,10 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     public function hydrate(array $data, ObjectManagerInterface $objectManager): void
     {
         $this->id = $data['Key'];
-        $this->filename = $data['Metadata']['filename'] ?? null;
         $this->bucket = new Bucket($data['Bucket']);
         $this->bin = $data['Body']->getContents();
 
         if (isset($data['Metadata'])) {
-            unset($data['Metadata']['filename']);
             $this->metadata = $data['Metadata'];
         }
     }
@@ -252,10 +229,6 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
             $metadata = $this->metadata;
         }
 
-        if ($this->filename) {
-            $metadata['filename'] = $this->filename;
-        }
-
         if ($metadata) {
             $data['Metadata'] = $metadata;
         }
@@ -281,11 +254,6 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
             switch ($fieldName) {
                 case 'bin':
                     $data['Body'] = $newValue;
-                    break;
-                case 'filename':
-                    if ($newValue) {
-                        $metadata['filename'] = $newValue;
-                    }
                     break;
                 case 'metadata':
                     if ($newValue) {
