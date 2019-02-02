@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Master
+
+# 0.2.0
 * Use filename as a full metadata
 * Authorize only A-Za-z0-9._- for bucket name
 * Throw exception when some required defined properties are empty
