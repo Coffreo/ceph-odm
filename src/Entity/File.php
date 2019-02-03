@@ -4,6 +4,8 @@
 namespace Coffreo\CephOdm\Entity;
 
 
+use Coffreo\CephOdm\EventListener\IdentifierChangedListener;
+use Coffreo\CephOdm\EventListener\NotifyIdentifierChanged;
 use Doctrine\Common\NotifyPropertyChanged;
 use Doctrine\Common\PropertyChangedListener;
 use Doctrine\SkeletonMapper\Hydrator\HydratableInterface;
@@ -19,7 +21,7 @@ use Ramsey\Uuid\Uuid;
 /**
  * Ceph file
  */
-class File implements HydratableInterface, IdentifiableInterface, LoadMetadataInterface, NotifyPropertyChanged, PersistableInterface
+class File implements HydratableInterface, IdentifiableInterface, LoadMetadataInterface, NotifyPropertyChanged, PersistableInterface, NotifyIdentifierChanged
 {
     /**
      * Ceph identifier
@@ -54,7 +56,14 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
      *
      * @var PropertyChangedListener[]
      */
-    private $listeners = [];
+    private $propertyChangedListeners = [];
+
+    /**
+     * Identifier changed listeners
+     *
+     * @var IdentifierChangedListener[]
+     */
+    private $identifierChangedListeners = [];
 
     /**
      * @codeCoverageIgnore
@@ -88,7 +97,7 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
 
     public function setBucket(Bucket $bucket): void
     {
-        $this->onPropertyChanged('bucket', $this->bucket, $bucket);
+        $this->onIdentifierChanged('bucket', $this->bucket, $bucket);
         $this->bucket = $bucket;
     }
 
@@ -186,12 +195,12 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
 
     /**
      * @internal used by the library to assign Ceph id, this should not be used in application code.
-     *
-     * @codeCoverageIgnore
      */
     public function assignIdentifier(array $identifier): void
     {
-        $this->id = (string)$identifier['Key'];
+        $id = (string)$identifier['Key'];
+        $this->onIdentifierChanged('Key', $this->id, $id);
+        $this->id = $id;
     }
 
     public static function loadMetadata(ClassMetadataInterface $metadata): void
@@ -209,7 +218,15 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
      */
     public function addPropertyChangedListener(PropertyChangedListener $listener)
     {
-        $this->listeners[] = $listener;
+        $this->propertyChangedListeners[] = $listener;
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public function addIdentifierChangedListener(IdentifierChangedListener $listener)
+    {
+        $this->identifierChangedListeners[] = $listener;
     }
 
     public function preparePersistChangeSet(): array
@@ -270,18 +287,25 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
         return $data;
     }
 
-    /**
-     * @param mixed $oldValue
-     * @param mixed $newValue
-     */
     protected function onPropertyChanged(string $propName, $oldValue, $newValue) : void
     {
-        if ($this->listeners === []) {
+        if ($this->propertyChangedListeners === []) {
             return;
         }
 
-        foreach ($this->listeners as $listener) {
+        foreach ($this->propertyChangedListeners as $listener) {
             $listener->propertyChanged($this, $propName, $oldValue, $newValue);
+        }
+    }
+
+    protected function onIdentifierChanged(string $propName, $oldValue, $newValue) : void
+    {
+        if ($this->identifierChangedListeners === []) {
+            return;
+        }
+
+        foreach ($this->identifierChangedListeners as $listener) {
+            $listener->identifierChanged($this, $propName, $oldValue, $newValue);
         }
     }
 }

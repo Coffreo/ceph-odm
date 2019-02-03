@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Launch an exception when updating an identifier of a non detached object
 * Add tests and update README for object cloning
 
 # 0.2.0

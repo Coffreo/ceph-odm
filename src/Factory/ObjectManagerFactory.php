@@ -7,11 +7,13 @@ namespace Coffreo\CephOdm\Factory;
 use Aws\S3\S3Client;
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Entity\File;
+use Coffreo\CephOdm\EventListener\AddObjectListenerListener;
 use Coffreo\CephOdm\Persister\CephBucketPersister;
 use Coffreo\CephOdm\Persister\CephFilePersister;
 use Coffreo\CephOdm\Repository\CephBucketDataRepository;
 use Coffreo\CephOdm\Repository\CephFileDataRepository;
 use Doctrine\Common\EventManager;
+use Doctrine\SkeletonMapper\Events;
 use Doctrine\SkeletonMapper\Hydrator\BasicObjectHydrator;
 use Doctrine\SkeletonMapper\Mapping\ClassMetadataFactory;
 use Doctrine\SkeletonMapper\Mapping\ClassMetadataInstantiator;
@@ -47,6 +49,7 @@ class ObjectManagerFactory
             $classMetadataFactory,
             $eventManager
         );
+        $eventManager->addEventListener(Events::postLoad, new AddObjectListenerListener($objectIdentityMap));
 
         $fileDataRepository = new CephFileDataRepository($client, $objectManager, File::class);
         $bucketDataRepository = new CephBucketDataRepository($client, $objectManager, Bucket::class);

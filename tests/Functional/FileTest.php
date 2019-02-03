@@ -110,6 +110,38 @@ class FileTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage File of bucket mybucket id mykey must be detached before changing its identifiers
+     */
+    public function testPersistWithUpdateBucketAndNonDetachedObjectShouldThrowException(): void
+    {
+        $this->client->createBucket(['Bucket' => 'mybucket2']);
+        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey', 'Body' => 'mydata']);
+
+        $repo = $this->objectManager->getRepository(File::class);
+        $file = $repo->find(['mybucket', 'mykey']);
+
+        $file->setBucket(new Bucket('mybucket2'));
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage File of bucket mybucket id mykey must be detached before changing its identifiers
+     */
+    public function testPersistWithUpdateFileIdAndNonDetachedObjectShouldThrowException(): void
+    {
+        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey', 'Body' => 'mydata']);
+
+        $repo = $this->objectManager->getRepository(File::class);
+        $file = $repo->find(['mybucket', 'mykey']);
+
+        $file->setBin('mydata2');
+        $file->setMetadata('mymeta', 'myvalue');
+        $this->objectManager->persist($file);
+        $this->objectManager->flush();
+    }
+
+    /**
      * @expectedException Aws\S3\Exception\S3Exception
      * @expectedExceptionMessage 404 Not Found
      */
@@ -245,22 +277,6 @@ class FileTest extends AbstractFunctionalTestCase
         $file->setBin('mydata');
 
         $this->objectManager->persist($file);
-        $this->objectManager->flush();
-    }
-
-    /**
-     * @expectedException \Coffreo\CephOdm\Exception\Exception
-     * @expectedExceptionMessage Bucket mynonexistentbucket doesn't exist
-     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::BUCKET_NOT_FOUND
-     */
-    public function testUpdateInNonExistentBucketShouldThrowException(): void
-    {
-        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid', 'Body' => 'mydata']);
-
-        $repo = $this->objectManager->getRepository(File::class);
-        $file = $repo->find(['mybucket', 'myid']);
-
-        $file->setBucket(new Bucket('mynonexistentbucket'));
         $this->objectManager->flush();
     }
 
