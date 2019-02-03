@@ -140,27 +140,23 @@ class FileTest extends AbstractFunctionalTestCase
         $expectedFile1->assignIdentifier(['Key' => 'myid1']);
         $expectedFile1->setBin('mybody1');
         $expectedFile1->setAllMetadata(['mymetadata' => 'myvalue']);
-        $expectedFile1->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $expectedFile2 = new File();
         $expectedFile2->setBucket($bucket);
         $expectedFile2->assignIdentifier(['Key' => 'myid2']);
         $expectedFile2->setBin('mybody2');
-        $expectedFile2->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $expectedFile3 = new File();
         $expectedFile3->setBucket($bucket);
         $expectedFile3->assignIdentifier(['Key' => 'myid3']);
         $expectedFile3->setBin('mybody3');
         $expectedFile3->setAllMetadata(['filename' => 'myfile3.txt', 'mymetadata' => 'myvalue2']);
-        $expectedFile3->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $expectedFile4 = new File();
         $expectedFile4->setBucket($bucket2);
         $expectedFile4->assignIdentifier(['Key' => 'myid2']);
         $expectedFile4->setBin('mybody4');
         $expectedFile4->setMetadata('filename', 'myfile4.txt');
-        $expectedFile4->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid1', 'Body' => 'mybody1', 'Metadata' => ['mymetadata' => 'myvalue']]);
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid2', 'Body' => 'mybody2']);
@@ -170,37 +166,54 @@ class FileTest extends AbstractFunctionalTestCase
         $repo = $this->objectManager->getRepository(File::class);
 
         $file = $repo->find(['mybucket', 'myid1']);
-        $this->assertEquals($expectedFile1, $file);
+        $this->compareFiles([$expectedFile1], [$file]);
 
         $file = $repo->findOneBy(['bucket' => 'mybucket', 'id' => 'myid2']);
-        $this->assertEquals($expectedFile2, $file);
+        $this->compareFiles([$expectedFile2], [$file]);
 
         $files = $repo->findAll();
-        $this->assertEquals([$expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4], $files);
+        $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket']);
-        $this->assertEquals([$expectedFile1, $expectedFile2, $expectedFile3], $files);
+        $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3], $files);
 
         $files = $repo->findBy(['id' => 'myid2']);
-        $this->assertEquals([$expectedFile2, $expectedFile4], $files);
+        $this->compareFiles([$expectedFile2, $expectedFile4], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket', 'id' => 'myid3']);
-        $this->assertEquals([$expectedFile3], $files);
+        $this->compareFiles([$expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket2', 'id' => 'myid3']);
-        $this->assertEquals([], $files);
+        $this->compareFiles([], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2);
-        $this->assertEquals([$expectedFile1, $expectedFile2], $files);
+        $this->compareFiles([$expectedFile1, $expectedFile2], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 1);
-        $this->assertEquals([$expectedFile2, $expectedFile3], $files);
+        $this->compareFiles([$expectedFile2, $expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 2);
-        $this->assertEquals([$expectedFile3], $files);
+        $this->compareFiles([$expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 3);
-        $this->assertEquals([], $files);
+        $this->compareFiles([], $files);
+    }
+
+    /**
+     * @param File[] $expectedFiles
+     * @param File[] $actualFiles
+     */
+    private function compareFiles(array $expectedFiles, array $actualFiles): void
+    {
+        $this->assertCount(count($expectedFiles), $actualFiles);
+
+        foreach ($expectedFiles as $key => $expectedFile) {
+            $actualFile = $actualFiles[$key];
+            $this->assertEquals($expectedFile->getBucket(), $actualFile->getBucket());
+            $this->assertEquals($expectedFile->getId(), $actualFile->getId());
+            $this->assertEquals($expectedFile->getBin(), $actualFile->getBin());
+            $this->assertEquals($expectedFile->getAllMetadata(), $actualFile->getAllMetadata());
+        }
     }
 
     public function testFindWithNonExistentFile(): void
