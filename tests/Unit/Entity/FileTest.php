@@ -5,6 +5,7 @@ namespace Coffreo\CephOdm\Test\Unit\Entity;
 
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Entity\File;
+use Coffreo\CephOdm\EventListener\IdentifierChangedListener;
 use Doctrine\Common\PropertyChangedListener;
 use Doctrine\SkeletonMapper\Mapping\ClassMetadataInterface;
 use Doctrine\SkeletonMapper\ObjectManager;
@@ -42,7 +43,7 @@ class FileTest extends TestCase
         $bucket = new Bucket('mybucketname');
         $newBucket = new Bucket('myotherbucketname');
 
-        $sut = $this->createSutForTestingSetter('bucket', [null, $bucket, $newBucket]);
+        $sut = $this->createSutForTestingSetter('bucket', [null, $bucket, $newBucket], true);
 
         $sut->setBucket($bucket);
         $this->assertSame($bucket, $sut->getBucket());
@@ -126,14 +127,15 @@ class FileTest extends TestCase
      *
      * @param string $fieldName name of the field matching to the setter
      * @param array $consecutiveValues consecutive values that the field should take
+     * @param bool $identifier whether the field is an identifier
      *
      * @return MockObject|File
      */
-    private function createSutForTestingSetter(string $fieldName, array $consecutiveValues): MockObject
+    private function createSutForTestingSetter(string $fieldName, array $consecutiveValues, bool $identifier = false): MockObject
     {
         $sut = $this
             ->getMockBuilder(File::class)
-            ->setMethods(['onPropertyChanged'])
+            ->setMethods([$identifier ? 'onIdentifierChanged' : 'onPropertyChanged'])
             ->getMock();
 
         $expectedCallArgs = [];
@@ -145,7 +147,7 @@ class FileTest extends TestCase
 
         $sut
             ->expects($this->exactly(count($expectedCallArgs)))
-            ->method('onPropertyChanged')
+            ->method($identifier ? 'onIdentifierChanged' : 'onPropertyChanged')
             ->withConsecutive(...$expectedCallArgs);
 
         return $sut;
@@ -380,6 +382,59 @@ class FileTest extends TestCase
         $this->assertTrue(true);
     }
 
+    public function providerOnIdentifierChanged(): array
+    {
+        $sut1 = new File();
+        $sut2 = new File();
+        $sut3 = new File();
+
+        return [
+            [
+                $sut1,
+                [],
+                []
+            ],
+            [
+                $sut2,
+                [$this->createMock(IdentifierChangedListener::class)],
+                [
+                    [$sut2, 'bucket', null, new Bucket('mybucket')],
+                    [$sut2, 'bucket', new Bucket('mybucket'), new Bucket('myotherbucket')]
+                ]
+            ],
+            [
+                $sut3,
+                [$this->createMock(IdentifierChangedListener::class), $this->createMock(IdentifierChangedListener::class)],
+                [
+                    [$sut3, 'bucket', null, new Bucket('mybucket')],
+                    [$sut3, 'bucket', new Bucket('mybucket'), new Bucket('myotherbucket')]
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider providerOnIdentifierChanged
+     * @covers ::onIdentifierChanged
+     */
+    public function testOnIdentifierChanged(File $sut, array $listeners, array $expectedCallArgs): void
+    {
+        /** @var MockObject $listener */
+        foreach ($listeners as $listener) {
+            $sut->addIdentifierChangedListener($listener);
+            $listener
+                ->expects($this->exactly(count($expectedCallArgs)))
+                ->method('identifierChanged')
+                ->withConsecutive(...$expectedCallArgs);
+        }
+
+        $sut->setBucket(new Bucket('mybucket'));
+        $sut->setBucket(new Bucket('myotherbucket'));
+
+        // Since @doesNotPerformAssertions doesn't allow to perform code coverage
+        $this->assertTrue(true);
+    }
+
     /**
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Valid characters for metadata name are lowercase letters, digits, dot and hyphen
@@ -426,5 +481,19 @@ class FileTest extends TestCase
     {
         $sut = new File();
         $sut->setAllMetadata(['myname' => 'myvalue', 'my:name' => 'myvalue']);
+    }
+
+    public function testAssignIdentifier(): void
+    {
+        $identifier = 'myid';
+        $newIdentifier = 'mynewid';
+
+        $sut = $this->createSutForTestingSetter('Key', [null, $identifier, $newIdentifier], true);
+
+        $sut->assignIdentifier(['Key' => $identifier]);
+        $this->assertSame($identifier, $sut->getId());
+
+        $sut->assignIdentifier(['Key' => $newIdentifier]);
+        $this->assertSame($newIdentifier, $sut->getId());
     }
 }

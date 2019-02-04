@@ -70,6 +70,31 @@ $objectManager->flush();
 $objectManager->clear();
 ```
 
+### Duplicate an object
+You can easyly clone an object by persisting it again. The only thing to keep in mind is to detach the entity:
+```php
+$object = $fileRepository->find(/* ... */);
+$objectManager->detach($object);
+
+// You can update (or not) the object properties before saving it
+$object->setBin('my-other-content');
+
+$objectManager->persist();
+$objectManager->flush();
+```
+The object will be saved with a new id. You can also save it to another bucket:
+```php
+$object = $fileRepository->find(/* ... */);
+$objectManager->detach($object);
+
+$object->setBucket(new \Coffreo\CephOdm\Entity\Bucket('my-bucket-2));
+// You can update (or not) the object properties before saving it
+$object->setBin('my-other-content');
+
+$objectManager->persist();
+$objectManager->flush();
+```
+
 ### Find an object by its identifiers
 Bucket and id are the primary identifiers of objects.
 ```php

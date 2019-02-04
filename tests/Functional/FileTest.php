@@ -65,6 +65,82 @@ class FileTest extends AbstractFunctionalTestCase
         $this->assertEquals(['filename' => 'myfilename.txt'], $object['Metadata']);
     }
 
+    public function testPersistWithUpdateFileBucketShouldCreateANewFile(): void
+    {
+        $this->client->createBucket(['Bucket' => 'mybucket2']);
+        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey', 'Body' => 'mydata']);
+
+        $repo = $this->objectManager->getRepository(File::class);
+        $file = $repo->find(['mybucket', 'mykey']);
+        $this->objectManager->detach($file);
+
+        $file->setBucket(new Bucket('mybucket2'));
+        $file->setBin('mydata2');
+        $file->setMetadata('mymeta', 'myvalue');
+        $this->objectManager->persist($file);
+        $this->objectManager->flush();
+
+        $object1 = $this->client->getObject(['Bucket' => 'mybucket', 'Key' => 'mykey']);
+        $this->assertEquals([], $object1['Metadata']);
+
+        $object2 = $this->client->getObject(['Bucket' => 'mybucket2', 'Key' => $file->getId()]);
+        $this->assertEquals('myvalue', $object2['Metadata']['mymeta']);
+        $this->assertEquals('mydata2', (string)$object2['Body']);
+    }
+
+    public function testPersistWithUpdateFileIdShouldCreateANewFile(): void
+    {
+        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey', 'Body' => 'mydata']);
+
+        $repo = $this->objectManager->getRepository(File::class);
+        $file = $repo->find(['mybucket', 'mykey']);
+        $this->objectManager->detach($file);
+
+        $file->setBin('mydata2');
+        $file->setMetadata('mymeta', 'myvalue');
+        $this->objectManager->persist($file);
+        $this->objectManager->flush();
+
+        $object1 = $this->client->getObject(['Bucket' => 'mybucket', 'Key' => 'mykey']);
+        $this->assertEquals([], $object1['Metadata']);
+
+        $object2 = $this->client->getObject(['Bucket' => 'mybucket', 'Key' => $file->getId()]);
+        $this->assertEquals('myvalue', $object2['Metadata']['mymeta']);
+        $this->assertEquals('mydata2', (string)$object2['Body']);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage File of bucket mybucket id mykey must be detached before changing its identifiers
+     */
+    public function testPersistWithUpdateBucketAndNonDetachedObjectShouldThrowException(): void
+    {
+        $this->client->createBucket(['Bucket' => 'mybucket2']);
+        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey', 'Body' => 'mydata']);
+
+        $repo = $this->objectManager->getRepository(File::class);
+        $file = $repo->find(['mybucket', 'mykey']);
+
+        $file->setBucket(new Bucket('mybucket2'));
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage File of bucket mybucket id mykey must be detached before changing its identifiers
+     */
+    public function testPersistWithUpdateFileIdAndNonDetachedObjectShouldThrowException(): void
+    {
+        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey', 'Body' => 'mydata']);
+
+        $repo = $this->objectManager->getRepository(File::class);
+        $file = $repo->find(['mybucket', 'mykey']);
+
+        $file->setBin('mydata2');
+        $file->setMetadata('mymeta', 'myvalue');
+        $this->objectManager->persist($file);
+        $this->objectManager->flush();
+    }
+
     /**
      * @expectedException Aws\S3\Exception\S3Exception
      * @expectedExceptionMessage 404 Not Found
@@ -96,27 +172,23 @@ class FileTest extends AbstractFunctionalTestCase
         $expectedFile1->assignIdentifier(['Key' => 'myid1']);
         $expectedFile1->setBin('mybody1');
         $expectedFile1->setAllMetadata(['mymetadata' => 'myvalue']);
-        $expectedFile1->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $expectedFile2 = new File();
         $expectedFile2->setBucket($bucket);
         $expectedFile2->assignIdentifier(['Key' => 'myid2']);
         $expectedFile2->setBin('mybody2');
-        $expectedFile2->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $expectedFile3 = new File();
         $expectedFile3->setBucket($bucket);
         $expectedFile3->assignIdentifier(['Key' => 'myid3']);
         $expectedFile3->setBin('mybody3');
         $expectedFile3->setAllMetadata(['filename' => 'myfile3.txt', 'mymetadata' => 'myvalue2']);
-        $expectedFile3->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $expectedFile4 = new File();
         $expectedFile4->setBucket($bucket2);
         $expectedFile4->assignIdentifier(['Key' => 'myid2']);
         $expectedFile4->setBin('mybody4');
         $expectedFile4->setMetadata('filename', 'myfile4.txt');
-        $expectedFile4->addPropertyChangedListener($this->objectManager->getUnitOfWork());
 
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid1', 'Body' => 'mybody1', 'Metadata' => ['mymetadata' => 'myvalue']]);
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid2', 'Body' => 'mybody2']);
@@ -126,37 +198,54 @@ class FileTest extends AbstractFunctionalTestCase
         $repo = $this->objectManager->getRepository(File::class);
 
         $file = $repo->find(['mybucket', 'myid1']);
-        $this->assertEquals($expectedFile1, $file);
+        $this->compareFiles([$expectedFile1], [$file]);
 
         $file = $repo->findOneBy(['bucket' => 'mybucket', 'id' => 'myid2']);
-        $this->assertEquals($expectedFile2, $file);
+        $this->compareFiles([$expectedFile2], [$file]);
 
         $files = $repo->findAll();
-        $this->assertEquals([$expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4], $files);
+        $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket']);
-        $this->assertEquals([$expectedFile1, $expectedFile2, $expectedFile3], $files);
+        $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3], $files);
 
         $files = $repo->findBy(['id' => 'myid2']);
-        $this->assertEquals([$expectedFile2, $expectedFile4], $files);
+        $this->compareFiles([$expectedFile2, $expectedFile4], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket', 'id' => 'myid3']);
-        $this->assertEquals([$expectedFile3], $files);
+        $this->compareFiles([$expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket2', 'id' => 'myid3']);
-        $this->assertEquals([], $files);
+        $this->compareFiles([], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2);
-        $this->assertEquals([$expectedFile1, $expectedFile2], $files);
+        $this->compareFiles([$expectedFile1, $expectedFile2], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 1);
-        $this->assertEquals([$expectedFile2, $expectedFile3], $files);
+        $this->compareFiles([$expectedFile2, $expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 2);
-        $this->assertEquals([$expectedFile3], $files);
+        $this->compareFiles([$expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 3);
-        $this->assertEquals([], $files);
+        $this->compareFiles([], $files);
+    }
+
+    /**
+     * @param File[] $expectedFiles
+     * @param File[] $actualFiles
+     */
+    private function compareFiles(array $expectedFiles, array $actualFiles): void
+    {
+        $this->assertCount(count($expectedFiles), $actualFiles);
+
+        foreach ($expectedFiles as $key => $expectedFile) {
+            $actualFile = $actualFiles[$key];
+            $this->assertEquals($expectedFile->getBucket(), $actualFile->getBucket());
+            $this->assertEquals($expectedFile->getId(), $actualFile->getId());
+            $this->assertEquals($expectedFile->getBin(), $actualFile->getBin());
+            $this->assertEquals($expectedFile->getAllMetadata(), $actualFile->getAllMetadata());
+        }
     }
 
     public function testFindWithNonExistentFile(): void
@@ -188,22 +277,6 @@ class FileTest extends AbstractFunctionalTestCase
         $file->setBin('mydata');
 
         $this->objectManager->persist($file);
-        $this->objectManager->flush();
-    }
-
-    /**
-     * @expectedException \Coffreo\CephOdm\Exception\Exception
-     * @expectedExceptionMessage Bucket mynonexistentbucket doesn't exist
-     * @expectedExceptionCode \Coffreo\CephOdm\Exception\Exception::BUCKET_NOT_FOUND
-     */
-    public function testUpdateInNonExistentBucketShouldThrowException(): void
-    {
-        $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid', 'Body' => 'mydata']);
-
-        $repo = $this->objectManager->getRepository(File::class);
-        $file = $repo->find(['mybucket', 'myid']);
-
-        $file->setBucket(new Bucket('mynonexistentbucket'));
         $this->objectManager->flush();
     }
 
