@@ -289,10 +289,6 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
 
     protected function onPropertyChanged(string $propName, $oldValue, $newValue) : void
     {
-        if ($this->propertyChangedListeners === []) {
-            return;
-        }
-
         foreach ($this->propertyChangedListeners as $listener) {
             $listener->propertyChanged($this, $propName, $oldValue, $newValue);
         }
@@ -300,10 +296,6 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
 
     protected function onIdentifierChanged(string $propName, $oldValue, $newValue) : void
     {
-        if ($this->identifierChangedListeners === []) {
-            return;
-        }
-
         foreach ($this->identifierChangedListeners as $listener) {
             $listener->identifierChanged($this, $propName, $oldValue, $newValue);
         }
