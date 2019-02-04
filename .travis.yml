@@ -6,6 +6,7 @@ language: php
 php:
   - "7.1"
   - "7.2"
+  - "7.3"
 
 env:
   - CODECOV_TOKEN="75d17900-cf74-40dc-abd1-ab7eb997ad4e"
