@@ -121,3 +121,13 @@ $objects = $fileRepository->findBy(['id' => 'e223fc11-8046-4a84-98e2-0de912d071e
 ```
 The previous statements only return objects that the **logged user owns**. For now, you can only perform a search on bucket and/or id.
 
+### Truncated results
+For the find methods which return many files (`findBy` and `findAll`), if there is too many results (more than 1000), the name of the buckets where all the files couldn't be returned are returned by `getBucketsTruncated`:
+```php
+$objects = $fileRepository->findAll();
+foreach ($objects->getBucketsTruncated() as $bucketName) {
+    // some files of the bucket $bucketName was not returned
+}
+```
+
+
