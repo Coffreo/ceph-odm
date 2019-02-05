@@ -39,13 +39,14 @@ abstract class AbstractFunctionalTestCase extends TestCase
     {
         $buckets = $this->client->listBuckets();
         foreach ($buckets['Buckets'] as $bucket) {
-            $objects = $this->client->listObjects(['Bucket' => $bucket['Name']]);
-            if (isset($objects['Contents'])) {
-                foreach ($objects['Contents'] as $object) {
-                    $this->client->deleteObject(['Bucket' => $bucket['Name'], 'Key' => $object['Key']]);
+            do {
+                $objects = $this->client->listObjects(['Bucket' => $bucket['Name']]);
+                if (isset($objects['Contents'])) {
+                    foreach ($objects['Contents'] as $object) {
+                        $this->client->deleteObject(['Bucket' => $bucket['Name'], 'Key' => $object['Key']]);
+                    }
                 }
-            }
-
+            } while(!empty($objects['IsTruncated']));
             $this->client->deleteBucket(['Bucket' => $bucket['Name']]);
         }
     }

@@ -10,8 +10,10 @@ use Coffreo\CephOdm\Entity\File;
 use Coffreo\CephOdm\EventListener\AddObjectListenerListener;
 use Coffreo\CephOdm\Persister\CephBucketPersister;
 use Coffreo\CephOdm\Persister\CephFilePersister;
-use Coffreo\CephOdm\Repository\CephBucketDataRepository;
-use Coffreo\CephOdm\Repository\CephFileDataRepository;
+use Coffreo\CephOdm\DataRepository\CephBucketDataRepository;
+use Coffreo\CephOdm\DataRepository\CephFileDataRepository;
+use Coffreo\CephOdm\Repository\BucketRepository;
+use Coffreo\CephOdm\Repository\FileRepository;
 use Doctrine\Common\EventManager;
 use Doctrine\SkeletonMapper\Events;
 use Doctrine\SkeletonMapper\Hydrator\BasicObjectHydrator;
@@ -76,8 +78,10 @@ class ObjectManagerFactory
             Bucket::class
         );
 
-        $objectRepositoryFactory->addObjectRepository(File::class, $fileRepository);
-        $objectRepositoryFactory->addObjectRepository(Bucket::class, $bucketRepository);
+        $fileRepositoryDecorator = new FileRepository($fileRepository);
+        $fileDataRepository->addQueryTruncatedListener($fileRepositoryDecorator);
+        $objectRepositoryFactory->addObjectRepository(File::class, $fileRepositoryDecorator);
+        $objectRepositoryFactory->addObjectRepository(Bucket::class, new BucketRepository($bucketRepository));
 
         $objectPersisterFactory->addObjectPersister(File::class, $filePersister);
         $objectPersisterFactory->addObjectPersister(Bucket::class, $bucketPersister);

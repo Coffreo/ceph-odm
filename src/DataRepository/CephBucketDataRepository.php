@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Repository;
+namespace Coffreo\CephOdm\DataRepository;
 
 /**
  * Repository for Ceph bucket objects

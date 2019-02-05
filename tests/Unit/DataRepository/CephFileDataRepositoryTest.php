@@ -1,20 +1,22 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Test\Unit\Repository;
+namespace Coffreo\CephOdm\Test\Unit\DataRepository;
 
 use Aws\CommandInterface;
 use Aws\S3\Exception\S3Exception;
 use Coffreo\CephOdm\Entity\Bucket;
-use Coffreo\CephOdm\Repository\CephFileDataRepository;
+use Coffreo\CephOdm\DataRepository\CephFileDataRepository;
+use Coffreo\CephOdm\EventListener\QueryTruncatedListener;
 use Doctrine\SkeletonMapper\Mapping\ClassMetadataInterface;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
+use PHPUnit\Framework\MockObject\Matcher\InvokedCount;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Coffreo\CephOdm\Test\DummyS3Client;
 
 /**
- * @coversDefaultClass \Coffreo\CephOdm\Repository\CephFileDataRepository
+ * @coversDefaultClass \Coffreo\CephOdm\DataRepository\CephFileDataRepository
  */
 class CephFileDataRepositoryTest extends TestCase
 {
@@ -77,11 +79,11 @@ class CephFileDataRepositoryTest extends TestCase
                     ['Key' => 'myobject2']
                 ]]],
                 [['Bucket' => 'mybucket2'], ['Contents' => []]],
-                [['Bucket' => 'mybucket3'], ['Contents' => [
+                [['Bucket' => 'mybucket3'], ['IsTruncated' => true, 'Contents' => [
                     ['Key' => 'myobject1'],
                     ['Key' => 'myobject2'],
                     ['Key' => 'myobject3']
-                ]]],
+                ]]]
             ]);
 
         $client
@@ -156,7 +158,7 @@ class CephFileDataRepositoryTest extends TestCase
 
     /**
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      * @covers ::findByIdentifier
      */
     public function testFind(): void
@@ -172,7 +174,7 @@ class CephFileDataRepositoryTest extends TestCase
 
     /**
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      * @covers ::findByIdentifier
      */
     public function testFindWithUnknownBucketShouldReturnNothing(): void
@@ -183,7 +185,7 @@ class CephFileDataRepositoryTest extends TestCase
 
     /**
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      * @covers ::findByIdentifier
      */
     public function testFindWithUnknownIdShouldReturnNothing(): void
@@ -197,7 +199,7 @@ class CephFileDataRepositoryTest extends TestCase
      * @expectedExceptionMessage myunexpectedexception
      *
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      * @covers ::findByIdentifier
      */
     public function testFindWithExceptionThrownByClientShouldThrowException(): void
@@ -247,11 +249,48 @@ class CephFileDataRepositoryTest extends TestCase
         $this->assertEquals($expectedReturn, $ret);
     }
 
+    public function providerFindByWithNonTruncatedQueryShouldNotifyListener(): array
+    {
+        return [
+            ['mybucket3', $this->once(), ['mybucket3']],
+            ['mybucket1', $this->never(), []],
+            [null, $this->once(), ['mybucket3']],
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByWithNonTruncatedQueryShouldNotifyListener
+     * @codeCoverageIgnore ::findBy
+     */
+    public function testFindByWithNonTruncatedQueryShouldNotifyListener(?string $bucketName, InvokedCount $invokedCount, array $expectedArgs): void
+    {
+        $listener1 = $this->createMock(QueryTruncatedListener::class);
+        $listener1
+            ->expects($invokedCount)
+            ->method('queryTruncated')
+            ->with($expectedArgs);
+
+        $listener2 = $this->createMock(QueryTruncatedListener::class);
+        $listener2
+            ->expects(clone $invokedCount)
+            ->method('queryTruncated')
+            ->with(['mybucket3']);
+
+        $this->sut->addQueryTruncatedListener($listener1);
+        $this->sut->addQueryTruncatedListener($listener2);
+
+        if ($bucketName === null) {
+            $this->sut->findAll();
+        } else {
+            $this->sut->findBy(['bucket' => $bucketName]);
+        }
+    }
+
     /**
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Limit 0 is not valid
      *
-     * @covers \Coffreo\CephOdm\Repository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
      */
     public function testFindByWithWrongLimitShouldThrowException(): void
     {
@@ -262,7 +301,7 @@ class CephFileDataRepositoryTest extends TestCase
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Offset -1 is not valid
      *
-     * @covers \Coffreo\CephOdm\Repository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
      */
     public function testFindByWithWrongOffsetShouldThrowException(): void
     {
@@ -300,7 +339,7 @@ class CephFileDataRepositoryTest extends TestCase
     /**
      * @dataProvider providerFindBy
      * @covers ::findBy
-     * @covers \Coffreo\CephOdm\Repository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
      * @covers ::bucketToString
      */
     public function testFindBy(array $criteria, ?int $limit, ?int $offset, array $expectedResult): void

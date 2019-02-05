@@ -105,11 +105,11 @@ echo $object->getFilename();    // test.txt
 ```
 In repository find methods, you can use the bucket name or a bucket object in your criteria:
 ```php
-$fileRepository->find([new \Coffreo\CephOdm\Entity\Bucket('my-bucket'), 'e223fc11-8046-4a84-98e2-0de912d071e9']);
+$object = $fileRepository->find([new \Coffreo\CephOdm\Entity\Bucket('my-bucket'), 'e223fc11-8046-4a84-98e2-0de912d071e9']);
 ```
 Is the same thing as:
 ```php
-$fileRepository->find('my-bucket', 'e223fc11-8046-4a84-98e2-0de912d071e9']);
+$object = $fileRepository->find('my-bucket', 'e223fc11-8046-4a84-98e2-0de912d071e9']);
 ```
 
 ### Other find methods

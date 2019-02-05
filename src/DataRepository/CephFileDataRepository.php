@@ -1,17 +1,23 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Repository;
+namespace Coffreo\CephOdm\DataRepository;
 
 
 use Aws\S3\Exception\S3Exception;
 use Coffreo\CephOdm\Entity\Bucket;
+use Coffreo\CephOdm\EventListener\QueryTruncatedListener;
 
 /**
  * Repository for Ceph file objects
  */
 class CephFileDataRepository extends AbstractCephDataRepository
 {
+    /**
+     * @var QueryTruncatedListener[]
+     */
+    private $listeners = [];
+
     public function findAll(): array
     {
         return $this->findBy([]);
@@ -58,8 +64,14 @@ class CephFileDataRepository extends AbstractCephDataRepository
 
         $ret = [];
         $count = 0;
+        $bucketsTruncated = [];
         foreach ($bucketNames as $bucketName) {
             $objects = $this->client->listObjects(['Bucket' => $bucketName]);
+
+            if (!empty($objects['IsTruncated'])) {
+                $bucketsTruncated[] = $bucketName;
+            }
+
             foreach ($objects['Contents'] as $object) {
                 if (isset($criteria['id']) && $object['Key'] != $criteria['id']) {
                     continue;
@@ -73,6 +85,12 @@ class CephFileDataRepository extends AbstractCephDataRepository
                 if ($count == $limit + $offset) {
                     break(2);
                 }
+            }
+        }
+
+        if ($bucketsTruncated) {
+            foreach ($this->listeners as $listener) {
+                $listener->queryTruncated($bucketsTruncated);
             }
         }
 
@@ -135,5 +153,13 @@ class CephFileDataRepository extends AbstractCephDataRepository
         }
 
         throw new \InvalidArgumentException("bucket must be a string or an instance of Bucket");
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public function addQueryTruncatedListener(QueryTruncatedListener $listener): void
+    {
+        $this->listeners[] = $listener;
     }
 }

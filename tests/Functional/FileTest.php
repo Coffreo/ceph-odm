@@ -5,6 +5,7 @@ namespace Coffreo\CephOdm\Test\Functional;
 
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Entity\File;
+use Coffreo\CephOdm\ResultSet\FileResultSet;
 
 class FileTest extends AbstractFunctionalTestCase
 {
@@ -48,6 +49,24 @@ class FileTest extends AbstractFunctionalTestCase
         $this->assertEquals('mydata', $object['Body']);
         $this->assertEquals($expectedMetadata, $object['Metadata'] ?? null);
     }
+
+    // TODO: uncoment when can be optimized (and add test with findAll if possible and usefull
+//    public function testResultTruncated(): void
+//    {
+//        $repo = $this->objectManager->getRepository(File::class);
+//
+//        for ($i=1; $i <= 1005; $i++) {
+//            $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey'.$i, 'Body' => 'mydata'.$i]);
+//
+//            if ($i == 999) {
+//                $all = $repo->findAll();
+//                $this->assertEquals([], $all->getBucketsTruncated());
+//            }
+//        }
+//
+//        $all = $repo->findAll();
+//        $this->assertEquals(['mybucket'], $all->getBucketsTruncated());
+//    }
 
     public function testUpdateFile(): void
     {
@@ -204,30 +223,39 @@ class FileTest extends AbstractFunctionalTestCase
         $this->compareFiles([$expectedFile2], [$file]);
 
         $files = $repo->findAll();
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket']);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3], $files);
 
         $files = $repo->findBy(['id' => 'myid2']);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile2, $expectedFile4], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket', 'id' => 'myid3']);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket2', 'id' => 'myid3']);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile1, $expectedFile2], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 1);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile2, $expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 2);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 3);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([], $files);
     }
 
@@ -235,7 +263,7 @@ class FileTest extends AbstractFunctionalTestCase
      * @param File[] $expectedFiles
      * @param File[] $actualFiles
      */
-    private function compareFiles(array $expectedFiles, array $actualFiles): void
+    private function compareFiles(array $expectedFiles, iterable $actualFiles): void
     {
         $this->assertCount(count($expectedFiles), $actualFiles);
 

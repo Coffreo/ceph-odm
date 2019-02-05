@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Repository;
+namespace Coffreo\CephOdm\DataRepository;
 
 use Doctrine\SkeletonMapper\DataRepository\BasicObjectDataRepository;
 use Aws\S3\S3Client;
