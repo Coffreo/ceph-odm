@@ -57,7 +57,7 @@ abstract class AbstractRepositoryDecorator implements ObjectRepositoryInterface
     }
 
     /**
-     * Wrap ObjectRepository findAll method and return an ArrayObject instead of an array
+     * Wrap ObjectRepository findAll method and return an ArrayObject subclass instead of an array
      */
     public function findAll() : iterable
     {
@@ -66,7 +66,7 @@ abstract class AbstractRepositoryDecorator implements ObjectRepositoryInterface
     }
 
     /**
-     * Wrap ObjectRepository findBy method and return an ArrayObject instead of an array
+     * Wrap ObjectRepository findBy method and return an ArrayObject subclass instead of an array
      */
     public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null) : iterable
     {

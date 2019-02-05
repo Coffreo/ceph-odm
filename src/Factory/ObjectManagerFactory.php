@@ -78,7 +78,9 @@ class ObjectManagerFactory
             Bucket::class
         );
 
-        $objectRepositoryFactory->addObjectRepository(File::class, new FileRepository($fileRepository));
+        $fileRepositoryDecorator = new FileRepository($fileRepository);
+        $fileDataRepository->addQueryTruncatedListener($fileRepositoryDecorator);
+        $objectRepositoryFactory->addObjectRepository(File::class, $fileRepositoryDecorator);
         $objectRepositoryFactory->addObjectRepository(Bucket::class, new BucketRepository($bucketRepository));
 
         $objectPersisterFactory->addObjectPersister(File::class, $filePersister);

@@ -50,6 +50,24 @@ class FileTest extends AbstractFunctionalTestCase
         $this->assertEquals($expectedMetadata, $object['Metadata'] ?? null);
     }
 
+    // TODO: uncoment when can be optimized (and add test with findAll if possible and usefull
+//    public function testResultTruncated(): void
+//    {
+//        $repo = $this->objectManager->getRepository(File::class);
+//
+//        for ($i=1; $i <= 1005; $i++) {
+//            $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey'.$i, 'Body' => 'mydata'.$i]);
+//
+//            if ($i == 999) {
+//                $all = $repo->findAll();
+//                $this->assertEquals([], $all->getBucketsTruncated());
+//            }
+//        }
+//
+//        $all = $repo->findAll();
+//        $this->assertEquals(['mybucket'], $all->getBucketsTruncated());
+//    }
+
     public function testUpdateFile(): void
     {
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'mykey', 'Body' => 'mydata']);

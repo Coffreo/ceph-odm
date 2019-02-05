@@ -14,5 +14,4 @@ class BucketRepository extends AbstractRepositoryDecorator
     {
         return new BucketResultSet($result);
     }
-
 }

@@ -7,8 +7,10 @@ use Aws\CommandInterface;
 use Aws\S3\Exception\S3Exception;
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\DataRepository\CephFileDataRepository;
+use Coffreo\CephOdm\EventListener\QueryTruncatedListener;
 use Doctrine\SkeletonMapper\Mapping\ClassMetadataInterface;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
+use PHPUnit\Framework\MockObject\Matcher\InvokedCount;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Coffreo\CephOdm\Test\DummyS3Client;
@@ -77,11 +79,11 @@ class CephFileDataRepositoryTest extends TestCase
                     ['Key' => 'myobject2']
                 ]]],
                 [['Bucket' => 'mybucket2'], ['Contents' => []]],
-                [['Bucket' => 'mybucket3'], ['Contents' => [
+                [['Bucket' => 'mybucket3'], ['IsTruncated' => true, 'Contents' => [
                     ['Key' => 'myobject1'],
                     ['Key' => 'myobject2'],
                     ['Key' => 'myobject3']
-                ]]],
+                ]]]
             ]);
 
         $client
@@ -245,6 +247,43 @@ class CephFileDataRepositoryTest extends TestCase
     {
         $ret = $this->sut->findOneBy($criteria);
         $this->assertEquals($expectedReturn, $ret);
+    }
+
+    public function providerFindByWithNonTruncatedQueryShouldNotifyListener(): array
+    {
+        return [
+            ['mybucket3', $this->once(), ['mybucket3']],
+            ['mybucket1', $this->never(), []],
+            [null, $this->once(), ['mybucket3']],
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByWithNonTruncatedQueryShouldNotifyListener
+     * @codeCoverageIgnore ::findBy
+     */
+    public function testFindByWithNonTruncatedQueryShouldNotifyListener(?string $bucketName, InvokedCount $invokedCount, array $expectedArgs): void
+    {
+        $listener1 = $this->createMock(QueryTruncatedListener::class);
+        $listener1
+            ->expects($invokedCount)
+            ->method('queryTruncated')
+            ->with($expectedArgs);
+
+        $listener2 = $this->createMock(QueryTruncatedListener::class);
+        $listener2
+            ->expects(clone $invokedCount)
+            ->method('queryTruncated')
+            ->with(['mybucket3']);
+
+        $this->sut->addQueryTruncatedListener($listener1);
+        $this->sut->addQueryTruncatedListener($listener2);
+
+        if ($bucketName === null) {
+            $this->sut->findAll();
+        } else {
+            $this->sut->findBy(['bucket' => $bucketName]);
+        }
     }
 
     /**
