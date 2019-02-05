@@ -59,34 +59,43 @@ class BucketTest extends AbstractFunctionalTestCase
         $this->assertEquals($expectedBucket, $bucket);
 
         $buckets = $repo->findAll();
-        $this->assertEquals($sortedBuckets, $buckets);
+        $this->compareBuckets($sortedBuckets, $buckets);
 
         $buckets = $repo->findBy(['name' => $bucketToFind]);
-        $this->assertEquals([$expectedBucket], $buckets);
+        $this->compareBuckets([$expectedBucket], $buckets);
 
         $buckets = $repo->findBy(['name' => 'mynonexistentbucket']);
-        $this->assertEquals([], $buckets);
+        $this->compareBuckets([], $buckets);
 
         $buckets = $repo->findBy(['name' => $bucketToFind], null, null, 1);
-        $this->assertEquals([], $buckets);
+        $this->compareBuckets([], $buckets);
 
         $buckets = $repo->findBy([], null, 3);
-        $this->assertEquals(array_slice($sortedBuckets, 0, 3), $buckets);
+        $this->compareBuckets(array_slice($sortedBuckets, 0, 3), $buckets);
 
         $buckets = $repo->findBy([], null, 3, 2);
-        $this->assertEquals(array_slice($sortedBuckets, 2, 3), $buckets);
+        $this->compareBuckets(array_slice($sortedBuckets, 2, 3), $buckets);
 
         $buckets = $repo->findBy([], null, 3, 3);
-        $this->assertEquals(array_slice($sortedBuckets, 3), $buckets);
+        $this->compareBuckets(array_slice($sortedBuckets, 3), $buckets);
 
         $buckets = $repo->findBy([], ['name' => -1], 3);
-        $this->assertEquals(array_slice($rsortedBuckets, 0, 3), $buckets);
+        $this->compareBuckets(array_slice($rsortedBuckets, 0, 3), $buckets);
 
         $buckets = $repo->findBy([], ['name' => -1], 3, 2);
-        $this->assertEquals(array_slice($rsortedBuckets, 2, 3), $buckets);
+        $this->compareBuckets(array_slice($rsortedBuckets, 2, 3), $buckets);
 
         $buckets = $repo->findBy([], ['name' => -1], 3, 3);
-        $this->assertEquals(array_slice($rsortedBuckets, 3), $buckets);
+        $this->compareBuckets(array_slice($rsortedBuckets, 3), $buckets);
+    }
+
+    /**
+     * @param File[] $expectedFiles
+     * @param File[] $actualFiles
+     */
+    private function compareBuckets(array $expectedBuckets, \ArrayObject $actualBuckets): void
+    {
+        $this->assertEquals($expectedBuckets, $actualBuckets->getArrayCopy());
     }
 
     public function testFindWithNonExistentBucket(): void

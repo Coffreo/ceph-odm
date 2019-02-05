@@ -235,7 +235,7 @@ class FileTest extends AbstractFunctionalTestCase
      * @param File[] $expectedFiles
      * @param File[] $actualFiles
      */
-    private function compareFiles(array $expectedFiles, array $actualFiles): void
+    private function compareFiles(array $expectedFiles, iterable $actualFiles): void
     {
         $this->assertCount(count($expectedFiles), $actualFiles);
 

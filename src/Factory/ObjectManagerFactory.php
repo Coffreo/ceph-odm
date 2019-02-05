@@ -12,6 +12,8 @@ use Coffreo\CephOdm\Persister\CephBucketPersister;
 use Coffreo\CephOdm\Persister\CephFilePersister;
 use Coffreo\CephOdm\DataRepository\CephBucketDataRepository;
 use Coffreo\CephOdm\DataRepository\CephFileDataRepository;
+use Coffreo\CephOdm\Repository\BucketRepository;
+use Coffreo\CephOdm\Repository\FileRepository;
 use Doctrine\Common\EventManager;
 use Doctrine\SkeletonMapper\Events;
 use Doctrine\SkeletonMapper\Hydrator\BasicObjectHydrator;
@@ -76,8 +78,8 @@ class ObjectManagerFactory
             Bucket::class
         );
 
-        $objectRepositoryFactory->addObjectRepository(File::class, $fileRepository);
-        $objectRepositoryFactory->addObjectRepository(Bucket::class, $bucketRepository);
+        $objectRepositoryFactory->addObjectRepository(File::class, new FileRepository($fileRepository));
+        $objectRepositoryFactory->addObjectRepository(Bucket::class, new BucketRepository($bucketRepository));
 
         $objectPersisterFactory->addObjectPersister(File::class, $filePersister);
         $objectPersisterFactory->addObjectPersister(Bucket::class, $bucketPersister);

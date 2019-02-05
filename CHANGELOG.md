@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Return \ArrayObject instead of arrays in repositories for returning many entities
 * Launch an exception when updating an identifier of a non detached object
 * Add tests and update README for object cloning
 
