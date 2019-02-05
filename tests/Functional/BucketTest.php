@@ -4,6 +4,7 @@
 namespace Coffreo\CephOdm\Test\Functional;
 
 use Coffreo\CephOdm\Entity\Bucket;
+use Coffreo\CephOdm\ResultSet\BucketResultSet;
 
 class BucketTest extends AbstractFunctionalTestCase
 {
@@ -93,7 +94,7 @@ class BucketTest extends AbstractFunctionalTestCase
      * @param File[] $expectedFiles
      * @param File[] $actualFiles
      */
-    private function compareBuckets(array $expectedBuckets, \ArrayObject $actualBuckets): void
+    private function compareBuckets(array $expectedBuckets, BucketResultSet $actualBuckets): void
     {
         $this->assertEquals($expectedBuckets, $actualBuckets->getArrayCopy());
     }

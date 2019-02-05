@@ -62,7 +62,7 @@ abstract class AbstractRepositoryDecorator implements ObjectRepositoryInterface
     public function findAll() : iterable
     {
         $result = $this->basicObjectRepository->findAll();
-        return new \ArrayObject($result);
+        return $this->createResultSet($result);
     }
 
     /**
@@ -71,7 +71,7 @@ abstract class AbstractRepositoryDecorator implements ObjectRepositoryInterface
     public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null) : iterable
     {
         $result = $this->basicObjectRepository->findBy($criteria, $orderBy, $limit, $offset);
-        return new \ArrayObject($result);
+        return $this->createResultSet($result);
     }
 
     public function findOneBy(array $criteria)
@@ -83,4 +83,9 @@ abstract class AbstractRepositoryDecorator implements ObjectRepositoryInterface
     {
         return $this->basicObjectRepository->getClassName();
     }
+
+    /**
+     * Create type specific ResultSet
+     */
+    abstract protected function createResultSet(array $result) : \ArrayObject;
 }

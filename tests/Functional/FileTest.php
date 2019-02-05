@@ -5,6 +5,7 @@ namespace Coffreo\CephOdm\Test\Functional;
 
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Entity\File;
+use Coffreo\CephOdm\ResultSet\FileResultSet;
 
 class FileTest extends AbstractFunctionalTestCase
 {
@@ -204,30 +205,39 @@ class FileTest extends AbstractFunctionalTestCase
         $this->compareFiles([$expectedFile2], [$file]);
 
         $files = $repo->findAll();
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket']);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3], $files);
 
         $files = $repo->findBy(['id' => 'myid2']);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile2, $expectedFile4], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket', 'id' => 'myid3']);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket2', 'id' => 'myid3']);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile1, $expectedFile2], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 1);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile2, $expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 2);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile3], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 3);
+        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([], $files);
     }
 

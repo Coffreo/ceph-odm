@@ -5,10 +5,14 @@ namespace Coffreo\CephOdm\Test\Unit\Repository;
 
 
 use Coffreo\CephOdm\Repository\BucketRepository;
+use Coffreo\CephOdm\ResultSet\BucketResultSet;
 use Doctrine\SkeletonMapper\ObjectRepository\BasicObjectRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @coversDefaultClass \Coffreo\CephOdm\Repository\BucketRepository
+ */
 class BucketRepositoryTest extends TestCase
 {
     /**
@@ -140,6 +144,7 @@ class BucketRepositoryTest extends TestCase
 
     /**
      * @covers \Coffreo\CephOdm\Repository\AbstractRepositoryDecorator::findAll
+     * @covers ::createResultSet
      */
     public function testFindAll() : void
     {
@@ -150,11 +155,12 @@ class BucketRepositoryTest extends TestCase
             ->method('findAll')
             ->willReturn($return);
 
-        $this->assertEquals(new \ArrayObject($return), $this->sut->findAll());
+        $this->assertEquals(new BucketResultSet($return), $this->sut->findAll());
     }
 
     /**
      * @covers \Coffreo\CephOdm\Repository\AbstractRepositoryDecorator::findBy
+     * @covers ::createResultSet
      */
     public function testFindBy() : void
     {
@@ -167,7 +173,7 @@ class BucketRepositoryTest extends TestCase
             ->with(...$args)
             ->willReturn($return);
 
-        $this->assertEquals(new \ArrayObject($return), $this->sut->findBy(...$args));
+        $this->assertEquals(new BucketResultSet($return), $this->sut->findBy(...$args));
     }
 
     /**
