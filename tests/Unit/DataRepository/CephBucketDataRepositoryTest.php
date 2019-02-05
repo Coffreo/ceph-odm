@@ -1,17 +1,17 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Test\Unit\Repository;
+namespace Coffreo\CephOdm\Test\Unit\DataRepository;
 
 
-use Coffreo\CephOdm\Repository\CephBucketDataRepository;
+use Coffreo\CephOdm\DataRepository\CephBucketDataRepository;
 use Coffreo\CephOdm\Test\DummyS3Client;
 use Doctrine\SkeletonMapper\Mapping\ClassMetadataInterface;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @coversDefaultClass \Coffreo\CephOdm\Repository\CephBucketDataRepository
+ * @coversDefaultClass \Coffreo\CephOdm\DataRepository\CephBucketDataRepository
  */
 class CephBucketDataRepositoryTest extends TestCase
 {
@@ -59,7 +59,7 @@ class CephBucketDataRepositoryTest extends TestCase
 
     /**
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      */
     public function testFind(): void
     {
@@ -68,7 +68,7 @@ class CephBucketDataRepositoryTest extends TestCase
 
     /**
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      */
     public function testFindWithUnknownIdentifierShouldReturnNothing(): void
     {
@@ -98,7 +98,7 @@ class CephBucketDataRepositoryTest extends TestCase
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Limit 0 is not valid
      *
-     * @covers \Coffreo\CephOdm\Repository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
      */
     public function testFindByWithWrongLimitShouldThrowException(): void
     {
@@ -109,7 +109,7 @@ class CephBucketDataRepositoryTest extends TestCase
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Offset -1 is not valid
      *
-     * @covers \Coffreo\CephOdm\Repository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
      */
     public function testFindByWithWrongOffsetShouldThrowException(): void
     {

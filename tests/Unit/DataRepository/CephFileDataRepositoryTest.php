@@ -1,12 +1,12 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Test\Unit\Repository;
+namespace Coffreo\CephOdm\Test\Unit\DataRepository;
 
 use Aws\CommandInterface;
 use Aws\S3\Exception\S3Exception;
 use Coffreo\CephOdm\Entity\Bucket;
-use Coffreo\CephOdm\Repository\CephFileDataRepository;
+use Coffreo\CephOdm\DataRepository\CephFileDataRepository;
 use Doctrine\SkeletonMapper\Mapping\ClassMetadataInterface;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
 use Coffreo\CephOdm\Test\DummyS3Client;
 
 /**
- * @coversDefaultClass \Coffreo\CephOdm\Repository\CephFileDataRepository
+ * @coversDefaultClass \Coffreo\CephOdm\DataRepository\CephFileDataRepository
  */
 class CephFileDataRepositoryTest extends TestCase
 {
@@ -156,7 +156,7 @@ class CephFileDataRepositoryTest extends TestCase
 
     /**
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      * @covers ::findByIdentifier
      */
     public function testFind(): void
@@ -172,7 +172,7 @@ class CephFileDataRepositoryTest extends TestCase
 
     /**
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      * @covers ::findByIdentifier
      */
     public function testFindWithUnknownBucketShouldReturnNothing(): void
@@ -183,7 +183,7 @@ class CephFileDataRepositoryTest extends TestCase
 
     /**
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      * @covers ::findByIdentifier
      */
     public function testFindWithUnknownIdShouldReturnNothing(): void
@@ -197,7 +197,7 @@ class CephFileDataRepositoryTest extends TestCase
      * @expectedExceptionMessage myunexpectedexception
      *
      * @covers ::find
-     * @covers \Coffreo\CephOdm\Repository\AbstractCephDataRepository::getIdentifier
+     * @covers \Coffreo\CephOdm\DataRepository\AbstractCephDataRepository::getIdentifier
      * @covers ::findByIdentifier
      */
     public function testFindWithExceptionThrownByClientShouldThrowException(): void
@@ -251,7 +251,7 @@ class CephFileDataRepositoryTest extends TestCase
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Limit 0 is not valid
      *
-     * @covers \Coffreo\CephOdm\Repository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
      */
     public function testFindByWithWrongLimitShouldThrowException(): void
     {
@@ -262,7 +262,7 @@ class CephFileDataRepositoryTest extends TestCase
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Offset -1 is not valid
      *
-     * @covers \Coffreo\CephOdm\Repository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
      */
     public function testFindByWithWrongOffsetShouldThrowException(): void
     {
@@ -300,7 +300,7 @@ class CephFileDataRepositoryTest extends TestCase
     /**
      * @dataProvider providerFindBy
      * @covers ::findBy
-     * @covers \Coffreo\CephOdm\Repository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
      * @covers ::bucketToString
      */
     public function testFindBy(array $criteria, ?int $limit, ?int $offset, array $expectedResult): void

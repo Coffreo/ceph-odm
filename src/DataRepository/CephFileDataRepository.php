@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Coffreo\CephOdm\Repository;
+namespace Coffreo\CephOdm\DataRepository;
 
 
 use Aws\S3\Exception\S3Exception;
