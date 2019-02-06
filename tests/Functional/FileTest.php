@@ -179,7 +179,7 @@ class FileTest extends AbstractFunctionalTestCase
         $this->client->getObject(['Bucket' => 'mybucket', 'Key' => 'mykey']);
     }
 
-    public function testFind(): void
+    private function createFindTestsData(): array
     {
         $bucket = new Bucket('mybucket');
         $bucket2 = new Bucket('mybucket2');
@@ -214,6 +214,13 @@ class FileTest extends AbstractFunctionalTestCase
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid3', 'Body' => 'mybody3', 'Metadata' => ['mymetadata' => 'myvalue2', 'filename' => 'myfile3.txt']]);
         $this->client->putObject(['Bucket' => 'mybucket2', 'Key' => 'myid2', 'Body' => 'mybody4', 'Metadata' => ['filename' => 'myfile4.txt']]);
 
+        return [$expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4];
+    }
+
+    public function testFind(): void
+    {
+        list($expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4) = $this->createFindTestsData();
+
         $repo = $this->objectManager->getRepository(File::class);
 
         $file = $repo->find(['mybucket', 'myid1']);
@@ -242,6 +249,13 @@ class FileTest extends AbstractFunctionalTestCase
         $files = $repo->findBy(['bucket' => 'mybucket2', 'id' => 'myid3']);
         $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([], $files);
+    }
+
+    public function testFindByWithLimit(): void
+    {
+        list($expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4) = $this->createFindTestsData();
+
+        $repo = $this->objectManager->getRepository(File::class);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2);
         $this->assertInstanceOf(FileResultSet::class, $files);
