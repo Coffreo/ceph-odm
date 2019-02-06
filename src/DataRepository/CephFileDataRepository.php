@@ -18,14 +18,27 @@ class CephFileDataRepository extends AbstractCephDataRepository
      */
     private $listeners = [];
 
+    /**
+     * Last key retrieved by bucket on truncated queries
+     *
+     * @var string[]
+     */
+    private $continueKeys = [];
+
     public function findAll(): array
     {
         return $this->findBy([]);
     }
 
-    public function findBy(array $criteria, ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array
+    public function findBy(array $criteria, ?array $orderBy = null, ?int $limit = null, ?int $continue = null): array
     {
-        $this->checkLimitAndOffset($limit, $offset);
+        $this->checkLimit($limit);
+
+        if (($limit || $continue) && !empty($criteria['id'])) {
+            throw new \InvalidArgumentException(
+                "limit and continue arguments can't be used if an id is defined as criteria"
+            );
+        }
 
         $fields = array_keys($criteria);
         $idCount = 0;
@@ -44,12 +57,8 @@ class CephFileDataRepository extends AbstractCephDataRepository
         }
 
         if ($idCount == 2) {
-            // check $offset since no result shoud be returned if offset is not equal to 0 or null
-            if (!$offset && $data = $this->findByIdentifier($criteria)) {
-                return [$data];
-            }
-
-            return [];
+            $data = $this->findByIdentifier($criteria);
+            return $data ? [$data] : [];
         }
 
         $bucketNames = [];
@@ -62,14 +71,28 @@ class CephFileDataRepository extends AbstractCephDataRepository
             }
         }
 
+        $clientCrit = [];
+        if ($limit) {
+            $clientCrit['MaxKeys'] = $limit;
+        }
+
         $ret = [];
-        $count = 0;
         $bucketsTruncated = [];
         foreach ($bucketNames as $bucketName) {
-            $objects = $this->client->listObjects(['Bucket' => $bucketName]);
+            if ($continue) {
+                if (!$continueKey = $this->continueKeys[$bucketName] ?? null) {
+                    continue;
+                }
+
+                $clientCrit['Marker'] = $continueKey;
+            }
+            unset($this->continueKeys[$bucketName]);
+
+            $objects = $this->client->listObjects(array_merge(['Bucket' => $bucketName], $clientCrit));
 
             if (!empty($objects['IsTruncated'])) {
                 $bucketsTruncated[] = $bucketName;
+                $this->continueKeys[$bucketName] = $objects['NextMarker'];
             }
 
             foreach ($objects['Contents'] as $object) {
@@ -77,14 +100,7 @@ class CephFileDataRepository extends AbstractCephDataRepository
                     continue;
                 }
 
-                if ($count++ < $offset) {
-                    continue;
-                }
-
                 $ret[] = $this->findByIdentifier(['bucket' => $bucketName, 'id' => $object['Key']]);
-                if ($count == $limit + $offset) {
-                    break(2);
-                }
             }
         }
 
@@ -110,7 +126,7 @@ class CephFileDataRepository extends AbstractCephDataRepository
 
     public function findOneBy(array $criteria): ?array
     {
-        $data = $this->findBy($criteria, null, 1);
+        $data = $this->findBy($criteria);
 
         return $data[0] ?? null;
     }
@@ -161,5 +177,16 @@ class CephFileDataRepository extends AbstractCephDataRepository
     public function addQueryTruncatedListener(QueryTruncatedListener $listener): void
     {
         $this->listeners[] = $listener;
+    }
+
+    private function checkLimit(?int $limit): void
+    {
+        if ($limit !== null && $limit < 1) {
+            throw new \InvalidArgumentException(sprintf("limit %d is not valid", $limit));
+        }
+
+        if ($limit > 1000) {
+            throw new \InvalidArgumentException(sprintf("limit can't be over than 1000 (actually %d)", $limit));
+        }
     }
 }

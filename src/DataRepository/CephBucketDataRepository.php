@@ -57,4 +57,14 @@ class CephBucketDataRepository extends AbstractCephDataRepository
         return $result ? current($result) : null;
     }
 
+    private function checkLimitAndOffset(?int $limit, ?int $offset): void
+    {
+        if ($limit !== null && $limit < 1) {
+            throw new \InvalidArgumentException(sprintf("Limit %d is not valid", $limit));
+        }
+
+        if ($offset && $offset < 0) {
+            throw new \InvalidArgumentException(sprintf("Offset %d is not valid", $offset));
+        }
+    }
 }

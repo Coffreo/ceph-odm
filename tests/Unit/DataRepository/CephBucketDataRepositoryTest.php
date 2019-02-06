@@ -98,7 +98,7 @@ class CephBucketDataRepositoryTest extends TestCase
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Limit 0 is not valid
      *
-     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephBucketDataRepository::checkLimitAndOffset
      */
     public function testFindByWithWrongLimitShouldThrowException(): void
     {
@@ -109,7 +109,7 @@ class CephBucketDataRepositoryTest extends TestCase
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Offset -1 is not valid
      *
-     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephBucketDataRepository::checkLimitAndOffset
      */
     public function testFindByWithWrongOffsetShouldThrowException(): void
     {
@@ -155,6 +155,7 @@ class CephBucketDataRepositoryTest extends TestCase
     /**
      * @dataProvider providerFindBy
      * @covers ::findBy
+     * @covers ::checkLimitAndOffset
      */
     public function testFindBy(array $criteria, ?array $orderBy, ?int $limit, ?int $offset, array $expectedResult): void
     {

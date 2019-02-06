@@ -228,6 +228,7 @@ class FileTest extends AbstractFunctionalTestCase
 
         $files = $repo->findBy(['bucket' => 'mybucket']);
         $this->assertInstanceOf(FileResultSet::class, $files);
+        $this->assertEquals([], $files->getBucketsTruncated());
         $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3], $files);
 
         $files = $repo->findBy(['id' => 'myid2']);
@@ -244,19 +245,25 @@ class FileTest extends AbstractFunctionalTestCase
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2);
         $this->assertInstanceOf(FileResultSet::class, $files);
+        $this->assertEquals(['mybucket'], $files->getBucketsTruncated());
         $this->compareFiles([$expectedFile1, $expectedFile2], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 1);
         $this->assertInstanceOf(FileResultSet::class, $files);
-        $this->compareFiles([$expectedFile2, $expectedFile3], $files);
-
-        $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 2);
-        $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([$expectedFile3], $files);
 
-        $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 3);
+        $files = $repo->findBy(['bucket' => 'mybucket'], null, 2, 1);
         $this->assertInstanceOf(FileResultSet::class, $files);
         $this->compareFiles([], $files);
+
+        $files = $repo->findBy(['bucket' => 'mybucket'], null, 1);
+        $this->assertInstanceOf(FileResultSet::class, $files);
+        $this->compareFiles([$expectedFile1], $files);
+
+        $files = $repo->findBy(['bucket' => 'mybucket'], null, 2);
+        $this->assertInstanceOf(FileResultSet::class, $files);
+        $this->assertEquals(['mybucket'], $files->getBucketsTruncated());
+        $this->compareFiles([$expectedFile1, $expectedFile2], $files);
     }
 
     /**
