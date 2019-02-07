@@ -6,12 +6,13 @@ namespace Coffreo\CephOdm\DataRepository;
 
 use Aws\S3\Exception\S3Exception;
 use Coffreo\CephOdm\Entity\Bucket;
+use Coffreo\CephOdm\EventListener\FindByFromCallListener;
 use Coffreo\CephOdm\EventListener\QueryTruncatedListener;
 
 /**
  * Repository for Ceph file objects
  */
-class CephFileDataRepository extends AbstractCephDataRepository
+class CephFileDataRepository extends AbstractCephDataRepository implements FindByFromCallListener
 {
     /**
      * @var QueryTruncatedListener[]
@@ -25,6 +26,13 @@ class CephFileDataRepository extends AbstractCephDataRepository
      */
     private $continueKeys = [];
 
+    /**
+     * Set to true when the next query to call must use findByFrom
+     *
+     * @var bool
+     */
+    private $findByFormNextCall = false;
+
     public function findAll(): array
     {
         return $this->findBy([]);
@@ -32,13 +40,25 @@ class CephFileDataRepository extends AbstractCephDataRepository
 
     public function findBy(array $criteria, ?array $orderBy = null, ?int $limit = null, ?int $continue = null): array
     {
-        $this->checkLimit($limit);
+        if ($this->findByFormNextCall) {
+            $this->findByFormNextCall = false;
+
+            if (!empty($criteria['id'])) {
+                throw new \InvalidArgumentException(
+                    "id can't be defined as criteria in findByFrom method"
+                );
+            }
+
+            return $this->findBy($criteria, $orderBy, $limit, 1);
+        }
 
         if (($limit || $continue) && !empty($criteria['id'])) {
             throw new \InvalidArgumentException(
                 "limit and continue arguments can't be used if an id is defined as criteria"
             );
         }
+
+        $this->checkLimit($limit);
 
         $fields = array_keys($criteria);
         $idCount = 0;
@@ -187,6 +207,23 @@ class CephFileDataRepository extends AbstractCephDataRepository
 
         if ($limit > 1000) {
             throw new \InvalidArgumentException(sprintf("limit can't be over than 1000 (actually %d)", $limit));
+        }
+    }
+
+    public function findByFromCalled(array $criteria, $from, ?array $orderBy, ?int $limit)
+    {
+        $this->findByFormNextCall = true;
+
+        if (is_string($from) && !empty($criteria['bucket'])) {
+            $from = [$criteria['bucket'] => $from];
+        }
+
+        if (!is_array($from)) {
+            throw new \InvalidArgumentException("from must be an array or a string if bucket is in criteria");
+        }
+
+        foreach ($from as $bucketName => $continueKey) {
+            $this->continueKeys[$bucketName] = $continueKey;
         }
     }
 }

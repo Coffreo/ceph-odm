@@ -446,4 +446,76 @@ class CephFileDataRepositoryTest extends TestCase
     {
         $this->sut->find([$bucket, 'myobjectid']);
     }
+
+    public function providerFindByFromWithIdShouldThrowException(): array
+    {
+        return [
+            [['bucket' => 'mybucket', 'id' => 'myid'], 'myid'],
+            [['id' => 'myid'], ['bucket' => 'myid']]
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByFromWithIdShouldThrowException
+     *
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage id can't be defined as criteria in findByFrom method
+     *
+     * @covers ::findBy
+     */
+    public function testFindByFromWithIdShouldThrowException(array $criteria, $from): void
+    {
+        $this->sut->findByFromCalled($criteria, $from, null, null);
+        $this->sut->findBy($criteria);
+    }
+
+    public function providerFindByFromWithWrongFromFormatShouldThrowException(): array
+    {
+        return [
+            ['myid'],
+            [new \stdClass()]
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByFromWithWrongFromFormatShouldThrowException
+     *
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage from must be an array or a string if bucket is in criteria
+     *
+     * @covers ::findByFromCalled
+     */
+    public function testFindByFromWithWrongFromFormatShouldThrowException($from): void
+    {
+        $this->sut->findByFromCalled(['id' => 'myid'], $from, null, null);
+        $this->sut->findBy(['id' => 'myid']);
+    }
+
+    public function providerFindByFrom(): array
+    {
+        return [
+            [['bucket' => 'mybucket3'], 'myobject1', array_slice($this->data, 3, 2)],
+            [[], ['mybucket1' => 'myobject1', 'mybucket3' => 'myobject2'], [$this->data[1], $this->data[4]]]
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByFrom
+     *
+     * @covers ::findByFromCalled
+     * @covers ::findBy
+     */
+    public function testFindByFrom(array $criteria, $from, array $expectedResult): void
+    {
+        $this->sut->findByFromCalled($criteria, $from, null, null);
+        $ret = $this->sut->findBy($criteria);
+
+        foreach ($expectedResult as &$data) {
+            if (!isset($data['Metadata'])) {
+                $data['Metadata'] = [];
+            }
+        }
+
+        $this->assertEquals($ret, $expectedResult);
+    }
 }

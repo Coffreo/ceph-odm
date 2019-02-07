@@ -80,6 +80,8 @@ class ObjectManagerFactory
 
         $fileRepositoryDecorator = new FileRepository($fileRepository);
         $fileDataRepository->addQueryTruncatedListener($fileRepositoryDecorator);
+        $fileRepositoryDecorator->addFindByFromCallListener($fileDataRepository);
+
         $objectRepositoryFactory->addObjectRepository(File::class, $fileRepositoryDecorator);
         $objectRepositoryFactory->addObjectRepository(Bucket::class, new BucketRepository($bucketRepository));
 

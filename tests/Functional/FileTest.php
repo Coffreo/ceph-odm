@@ -253,7 +253,7 @@ class FileTest extends AbstractFunctionalTestCase
 
     public function testFindByWithLimit(): void
     {
-        list($expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4) = $this->createFindTestsData();
+        list($expectedFile1, $expectedFile2, $expectedFile3) = $this->createFindTestsData();
 
         $repo = $this->objectManager->getRepository(File::class);
 
@@ -278,6 +278,21 @@ class FileTest extends AbstractFunctionalTestCase
         $this->assertInstanceOf(FileResultSet::class, $files);
         $this->assertEquals(['mybucket'], $files->getBucketsTruncated());
         $this->compareFiles([$expectedFile1, $expectedFile2], $files);
+    }
+
+    public function testFindByFrom(): void
+    {
+        list(, $expectedFile2, $expectedFile3) = $this->createFindTestsData();
+        $repo = $this->objectManager->getRepository(File::class);
+
+        $files = $repo->findByFrom(['bucket' => 'mybucket'], 'myid1');
+        $this->compareFiles([$expectedFile2, $expectedFile3], $files);
+
+        $files = $repo->findByFrom(['bucket' => 'mybucket'], 'myid1', [], 1);
+        $this->compareFiles([$expectedFile2], $files);
+
+        $files = $repo->findByFrom([], ['mybucket' => 'myid1']);
+        $this->compareFiles([$expectedFile2, $expectedFile3], $files);
     }
 
     /**
