@@ -343,7 +343,7 @@ class CephFileDataRepositoryTest extends TestCase
 
     /**
      * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Allowed search criteria are only bucket and id (myotherfield provided)
+     * @expectedExceptionMessage Allowed search criteria are only bucket, id and metadata (myotherfield provided)
      *
      * @covers ::findBy
      */
@@ -358,6 +358,7 @@ class CephFileDataRepositoryTest extends TestCase
             [[], null, false, $this->data],
             [[], 2, false, array_slice($this->data, 0, 4), array_slice($this->data, 4, 1)],
             [['bucket' => 'mybucket1'], null, false, array_slice($this->data, 0, 2), []],
+            [['bucket' => 'mybucket1', 'metadata' => ['mymetadata1' => 'myvalue1']], null, false, [$this->data[0]], []],
             [['bucket' => new Bucket('mybucket1')], 1, false, array_slice($this->data, 0, 1), array_slice($this->data, 1, 1)],
             [['id' => 'myobject2'], null, false, [$this->data[1], $this->data[3]]],
             [['bucket' => new Bucket('mybucket3'), 'id' => 'myobject2'], null, false, [$this->data[3]]]
@@ -369,6 +370,7 @@ class CephFileDataRepositoryTest extends TestCase
      * @covers ::findBy
      * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimit
      * @covers ::bucketToString
+     * @covers ::filterByMetadata
      */
     public function testFindBy(array $criteria, ?int $limit, bool $continue, array $expectedResult, ?array $expectedContinueResult = null): void
     {

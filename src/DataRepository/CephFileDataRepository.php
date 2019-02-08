@@ -62,13 +62,10 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
         $this->checkLimit($limitByBucket);
 
         $fields = array_keys($criteria);
-        $idCount = 0;
         foreach ($fields as $field) {
-            if ($field == 'bucket' || $field == 'id') {
-                $idCount++;
-            } else {
+            if (!in_array($field, ['bucket', 'id', 'metadata'])) {
                 throw new \InvalidArgumentException(
-                    sprintf("Allowed search criteria are only bucket and id (%s provided)", $field)
+                    sprintf("Allowed search criteria are only bucket, id and metadata (%s provided)", $field)
                 );
             }
         }
@@ -77,7 +74,7 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
             $criteria['bucket'] = $this->bucketToString($criteria['bucket']);
         }
 
-        if ($idCount == 2) {
+        if (isset($criteria['bucket']) && isset($criteria['id'])) {
             $data = $this->findByIdentifier($criteria);
             return $data ? [$data] : [];
         }
@@ -128,6 +125,10 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
             }
         }
 
+        if (isset($criteria['metadata'])) {
+            $this->filterByMetadata($ret, $criteria['metadata']);
+        }
+
         if ($bucketsTruncated) {
             foreach ($this->listeners as $listener) {
                 $listener->queryTruncated($bucketsTruncated);
@@ -135,6 +136,18 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
         }
 
         return $ret;
+    }
+
+    private function filterByMetadata(array &$result, array $criteriaMetadata): void
+    {
+        foreach ($result as $key => $res) {
+            foreach ($criteriaMetadata as $metadataName => $value) {
+                if (!isset($res['Metadata'][$metadataName]) || $res['Metadata'][$metadataName] != $value) {
+                    unset($result[$key]);
+                    break;
+                }
+            }
+        }
     }
 
     public function find($id): ?array

@@ -185,14 +185,30 @@ class FileTest extends AbstractFunctionalTestCase
         $expectedFile4 = new File();
         $expectedFile4->assignIdentifier(['Bucket' => $bucket2, 'Key' => 'myid2']);
         $expectedFile4->setBin('mybody4');
-        $expectedFile4->setMetadata('filename', 'myfile4.txt');
+        $expectedFile4->setMetadata('filename', 'myfile3.txt');
 
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid1', 'Body' => 'mybody1', 'Metadata' => ['mymetadata' => 'myvalue']]);
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid2', 'Body' => 'mybody2']);
         $this->client->putObject(['Bucket' => 'mybucket', 'Key' => 'myid3', 'Body' => 'mybody3', 'Metadata' => ['mymetadata' => 'myvalue2', 'filename' => 'myfile3.txt']]);
-        $this->client->putObject(['Bucket' => 'mybucket2', 'Key' => 'myid2', 'Body' => 'mybody4', 'Metadata' => ['filename' => 'myfile4.txt']]);
+        $this->client->putObject(['Bucket' => 'mybucket2', 'Key' => 'myid2', 'Body' => 'mybody4', 'Metadata' => ['filename' => 'myfile3.txt']]);
 
         return [$expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4];
+    }
+
+    public function testFindByWithMetadata(): void
+    {
+        list($expectedFile1,, $expectedFile3, $expectedFile4) = $this->createFindTestsData();
+
+        $repo = $this->objectManager->getRepository(File::class);
+
+        $files = $repo->findBy(['metadata' => ['mymetadata' => 'myvalue']]);
+        $this->compareFiles([$expectedFile1], $files);
+
+        $files = $repo->findBy(['metadata' => ['filename' => 'myfile3.txt']]);
+        $this->compareFiles([$expectedFile3, $expectedFile4], $files);
+
+        $files = $repo->findBy(['bucket' => 'mybucket', 'metadata' => ['filename' => 'myfile3.txt']]);
+        $this->compareFiles([$expectedFile3], $files);
     }
 
     public function testFind(): void
