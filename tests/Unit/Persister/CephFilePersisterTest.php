@@ -46,9 +46,10 @@ class CephFilePersisterTest extends TestCase
     {
         $file = $this->createMock(File::class);
 
+        $bucket = new Bucket('mybucket');
         $file
             ->method('getBucket')
-            ->willReturn(new Bucket('mybucket'));
+            ->willReturn($bucket);
 
         $file
             ->method('getBin')
@@ -57,14 +58,17 @@ class CephFilePersisterTest extends TestCase
         $file
             ->expects($this->once())
             ->method('preparePersistChangeSet')
-            ->willReturn(['mykey1' => 'myvalue1', 'mykey2' => 'myvalue2']);
+            ->willReturn(['Bucket' => $bucket, 'mykey1' => 'myvalue1', 'mykey2' => 'myvalue2']);
 
         $this->client
             ->expects($this->once())
             ->method('putObject')
-            ->with(['mykey1' => 'myvalue1', 'mykey2' => 'myvalue2']);
+            ->with(['Bucket' => 'mybucket', 'mykey1' => 'myvalue1', 'mykey2' => 'myvalue2']);
 
-        $this->assertEquals(['mykey1' => 'myvalue1', 'mykey2' => 'myvalue2'], $this->sut->persistObject($file));
+        $this->assertEquals(
+            ['Bucket' => $bucket, 'mykey1' => 'myvalue1', 'mykey2' => 'myvalue2'],
+            $this->sut->persistObject($file)
+        );
     }
 
     /**
@@ -76,9 +80,10 @@ class CephFilePersisterTest extends TestCase
         $changeSet = $this->createMock(ChangeSet::class);
         $file = $this->createMock(File::class);
 
+        $bucket = new Bucket('mybucket');
         $file
             ->method('getBucket')
-            ->willReturn(new Bucket('mybucket'));
+            ->willReturn($bucket);
 
         $file
             ->method('getBin')
@@ -88,15 +93,15 @@ class CephFilePersisterTest extends TestCase
             ->expects($this->once())
             ->method('prepareUpdateChangeSet')
             ->with($changeSet)
-            ->willReturn(['mykey1' => 'myvalue1', 'mykey2' => 'myvalue2']);
+            ->willReturn(['Bucket' => $bucket, 'mykey1' => 'myvalue1', 'mykey2' => 'myvalue2']);
 
         $this->client
             ->expects($this->once())
             ->method('putObject')
-            ->with(['mykey1' => 'myvalue1', 'mykey2' => 'myvalue2']);
+            ->with(['Bucket' => 'mybucket', 'mykey1' => 'myvalue1', 'mykey2' => 'myvalue2']);
 
         $ret = $this->sut->updateObject($file, $changeSet);
-        $this->assertEquals(['mykey1' => 'myvalue1', 'mykey2' => 'myvalue2'], $ret);
+        $this->assertEquals(['Bucket' => $bucket, 'mykey1' => 'myvalue1', 'mykey2' => 'myvalue2'], $ret);
     }
 
     /**

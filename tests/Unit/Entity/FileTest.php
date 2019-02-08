@@ -250,10 +250,10 @@ class FileTest extends TestCase
     public function providerPreparePersistChangeSet(): array
     {
         return [
-            ['mybucketname', 'myid', 'mybinarycontent', ['filename' => 'myfilename'], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['filename' => 'myfilename']]],
-            ['mybucketname', 'myid', 'mybinarycontent', [], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent']],
-            ['mybucketname', 'myid', 'mybinarycontent', ['filename' => 'myfilename', 'mymetadata1' => 'myvalue1'], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['filename' => 'myfilename', 'mymetadata1' => 'myvalue1']]],
-            ['mybucketname', 'myid', 'mybinarycontent', ['mymetadata1' => 'myvalue1'], ['Bucket' => 'mybucketname', 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['mymetadata1' => 'myvalue1']]]
+            ['mybucketname', 'myid', 'mybinarycontent', ['filename' => 'myfilename'], ['Bucket' => new Bucket('mybucketname'), 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['filename' => 'myfilename']]],
+            ['mybucketname', 'myid', 'mybinarycontent', [], ['Bucket' => new Bucket('mybucketname'), 'Key' => 'myid', 'Body' => 'mybinarycontent']],
+            ['mybucketname', 'myid', 'mybinarycontent', ['filename' => 'myfilename', 'mymetadata1' => 'myvalue1'], ['Bucket' => new Bucket('mybucketname'), 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['filename' => 'myfilename', 'mymetadata1' => 'myvalue1']]],
+            ['mybucketname', 'myid', 'mybinarycontent', ['mymetadata1' => 'myvalue1'], ['Bucket' => new Bucket('mybucketname'), 'Key' => 'myid', 'Body' => 'mybinarycontent', 'Metadata' => ['mymetadata1' => 'myvalue1']]]
         ];
     }
 
@@ -323,8 +323,7 @@ class FileTest extends TestCase
         $changeset->method('getChanges')->willReturn($changes);
 
         $sut = new File();
-        $sut->setBucket(new Bucket('mybucketname'));
-        $sut->assignIdentifier(['Key' => 'myid']);
+        $sut->assignIdentifier(['Bucket' => new Bucket('mybucketname'), 'Key' => 'myid']);
 
         $this->assertEquals($expectedReturn, $sut->prepareUpdateChangeSet($changeset));
     }
@@ -490,10 +489,13 @@ class FileTest extends TestCase
 
         $sut = $this->createSutForTestingSetter('Key', [null, $identifier, $newIdentifier], true);
 
-        $sut->assignIdentifier(['Key' => $identifier]);
+        $bucket = new Bucket('mybucket');
+        $sut->assignIdentifier(['Bucket' => $bucket,'Key' => $identifier]);
+        $this->assertEquals($bucket, $sut->getBucket());
         $this->assertSame($identifier, $sut->getId());
 
-        $sut->assignIdentifier(['Key' => $newIdentifier]);
+        $sut->assignIdentifier(['Bucket' => $bucket, 'Key' => $newIdentifier]);
+        $this->assertEquals($bucket, $sut->getBucket());
         $this->assertSame($newIdentifier, $sut->getId());
     }
 }

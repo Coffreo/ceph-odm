@@ -198,6 +198,8 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
      */
     public function assignIdentifier(array $identifier): void
     {
+        $this->bucket = $identifier['Bucket'];
+
         $id = (string)$identifier['Key'];
         $this->onIdentifierChanged('Key', $this->id, $id);
         $this->id = $id;
@@ -236,7 +238,7 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
         }
 
         $data = [
-            'Bucket' => $this->bucket->getName(),
+            'Bucket' => $this->bucket,
             'Key' => Uuid::uuid4(),
             'Body' => $this->bin
         ];
