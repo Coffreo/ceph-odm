@@ -38,7 +38,7 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
         return $this->findBy([]);
     }
 
-    public function findBy(array $criteria, ?array $orderBy = null, ?int $limit = null, ?int $continue = null): array
+    public function findBy(array $criteria, ?array $orderBy = null, ?int $limitByBucket = null, ?int $continue = null): array
     {
         if ($this->findByFormNextCall) {
             $this->findByFormNextCall = false;
@@ -49,16 +49,16 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
                 );
             }
 
-            return $this->findBy($criteria, $orderBy, $limit, 1);
+            return $this->findBy($criteria, $orderBy, $limitByBucket, 1);
         }
 
-        if (($limit || $continue) && !empty($criteria['id'])) {
+        if (($limitByBucket || $continue) && !empty($criteria['id'])) {
             throw new \InvalidArgumentException(
                 "limit and continue arguments can't be used if an id is defined as criteria"
             );
         }
 
-        $this->checkLimit($limit);
+        $this->checkLimit($limitByBucket);
 
         $fields = array_keys($criteria);
         $idCount = 0;
@@ -92,8 +92,8 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
         }
 
         $clientCrit = [];
-        if ($limit) {
-            $clientCrit['MaxKeys'] = $limit;
+        if ($limitByBucket) {
+            $clientCrit['MaxKeys'] = $limitByBucket;
         }
 
         $ret = [];
@@ -210,7 +210,7 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
         }
     }
 
-    public function findByFromCalled(array $criteria, $from, ?array $orderBy, ?int $limit)
+    public function findByFromCalled(array $criteria, $from, ?array $orderBy, ?int $limitByBucket)
     {
         $this->findByFormNextCall = true;
 

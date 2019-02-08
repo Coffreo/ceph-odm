@@ -40,11 +40,19 @@ class FileRepository extends AbstractRepositoryDecorator implements QueryTruncat
         $this->findByFromCallListeners[] = $listener;
     }
 
-    public function findByFrom(array $criteria, $from, ?array $orderBy = null, ?int $limit = null): iterable
+    /**
+     * @codeCoverageIgnore
+     */
+    public function findBy(array $criteria, ?array $orderBy = null, $limitByBucket = null, $continue = null) : iterable
+    {
+        return parent::findBy($criteria, $orderBy, $limitByBucket, $continue);
+    }
+
+    public function findByFrom(array $criteria, $from, ?array $orderBy = null, ?int $limitByBucket = null): iterable
     {
         foreach ($this->findByFromCallListeners as $listener) {
-            $listener->findByFromCalled($criteria, $from, $orderBy, $limit);
+            $listener->findByFromCalled($criteria, $from, $orderBy, $limitByBucket);
         }
-        return $this->findBy($criteria, $orderBy, $limit, 1);
+        return $this->findBy($criteria, $orderBy, $limitByBucket, 1);
     }
 }
