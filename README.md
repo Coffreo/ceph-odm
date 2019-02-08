@@ -122,12 +122,43 @@ $objects = $fileRepository->findBy(['id' => 'e223fc11-8046-4a84-98e2-0de912d071e
 The previous statements only return objects that the **logged user owns**. For now, you can only perform a search on bucket and/or id.
 
 ### Truncated results
-For the find methods which return many files (`findBy` and `findAll`), if there is too many results (more than 1000), the name of the buckets where all the files couldn't be returned are returned by `getBucketsTruncated`:
+For the find methods which return many files (`findBy` and `findAll`), if there is too many results (more than the limit you specified or 1000 by default), the names of the buckets where all the files couldn't be returned are returned by `getBucketsTruncated`:
 ```php
-$objects = $fileRepository->findAll();
+// Let's set the limit to 10
+$objects = $fileRepository->findBy(['bucket' => 'mybucket'], [], 10);
 foreach ($objects->getBucketsTruncated() as $bucketName) {
-    // some files of the bucket $bucketName was not returned
+    // some files of the bucket $bucketName ('mybucket' in our case) was not returned
 }
 ```
 
+### Resume truncated queries
+You can use the `continue` parameter to resume a previously truncated query. For instance for retrieving the files of `mybucket` that was not retrieved by the query above:
+```php
+// It may be necessary to do this call many times. Do this call in a loop until $objects->getBucketsTruncated() returns an empty array.
+$objects = $fileRepository->findBy(['bucket' => 'mybucket'], [], null, 1);
+```
+For making this possible, the repository keeps a pointer on the last file returned by bucket. Note that this pointer is modified when another query is done on the bucket; the calls bellow update the pointer for bucket `mybucket`:
+* `findBy(['bucket' => 'mybucket'])`
+* `findOneBy(['id' => 'myid'])`
+* `findBy([])`
+* `findAll`  
+Only `find` never modify the internal pointer. 
 
+
+This is another example for retrieving all files of the connected user:
+```php
+$truncated = []
+do {
+   $objects = $fileRepository->findBy([], [], null, $truncated ? 1 : 0);
+   // Do something with objects
+   $truncated = $objects->getBucketsTruncated();
+} while ($truncated);
+```
+Note that you can use `findAll` on the first call too.
+
+Finally, the `findByFrom` method returns files starting **after** the given identifier:
+```php
+$objects = $fileRepository->findByFrom(['bucket' => 'mybucket'], ['mybucket' => 'myid3']);
+// Returns files myid4, myid5, myid6... but not myid3
+// Since the criteria specifies the bucket, you can even simplify by: findByFrom(['bucket' => 'mybucket'], 'myid3')
+```

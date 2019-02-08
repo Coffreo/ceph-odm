@@ -73,18 +73,53 @@ class CephFileDataRepositoryTest extends TestCase
 
         $client
             ->method('listObjects')
-            ->willReturnMap([
-                [['Bucket' => 'mybucket1'], ['Contents' => [
-                    ['Key' => 'myobject1'],
-                    ['Key' => 'myobject2']
-                ]]],
-                [['Bucket' => 'mybucket2'], ['Contents' => []]],
-                [['Bucket' => 'mybucket3'], ['IsTruncated' => true, 'Contents' => [
-                    ['Key' => 'myobject1'],
-                    ['Key' => 'myobject2'],
-                    ['Key' => 'myobject3']
-                ]]]
-            ]);
+            ->willReturnCallback(function ($args): array {
+                $result = [];
+                if (isset($args['Bucket'])) {
+                    switch ($args['Bucket']) {
+                        case 'mybucket1':
+                            $result = ['Contents' => [
+                                ['Key' => 'myobject1'],
+                                ['Key' => 'myobject2']
+                            ]];
+                            break;
+
+                        case 'mybucket2':
+                            $result = ['Contents' => []];
+                            break;
+
+                        case 'mybucket3':
+                            $result = ['Contents' => [
+                                ['Key' => 'myobject1'],
+                                ['Key' => 'myobject2'],
+                                ['Key' => 'myobject3']
+                            ]];
+                            break;
+                    }
+                }
+
+                $foundKey = null;
+                if (!empty($args['Marker'])) {
+                    foreach ($result['Contents'] as $key => $data) {
+                        if (current($data) == $args['Marker']) {
+                            $foundKey = $key;
+                            break;
+                        }
+                    }
+                }
+
+                if ($foundKey !== null) {
+                    $result['Contents'] = array_slice($result['Contents'], $foundKey + 1);
+                }
+
+                if (!empty($args['MaxKeys']) && count($result['Contents']) > $args['MaxKeys']) {
+                    $result['Contents'] = array_slice($result['Contents'], 0, $args['MaxKeys']);
+                    $result['IsTruncated'] = true;
+                    $result['NextMarker'] = current(current(array_slice($result['Contents'], -1)));
+                }
+
+                return $result;
+            });
 
         $client
             ->method('getObject')
@@ -249,20 +284,20 @@ class CephFileDataRepositoryTest extends TestCase
         $this->assertEquals($expectedReturn, $ret);
     }
 
-    public function providerFindByWithNonTruncatedQueryShouldNotifyListener(): array
+    public function providerFindByWithTruncatedQueryShouldNotifyListener(): array
     {
         return [
-            ['mybucket3', $this->once(), ['mybucket3']],
-            ['mybucket1', $this->never(), []],
-            [null, $this->once(), ['mybucket3']],
+            ['mybucket3', 2, $this->once(), ['mybucket3']],
+            ['mybucket3', null, $this->never(), []],
+            [null, null, $this->never(), ['mybucket3']],
         ];
     }
 
     /**
-     * @dataProvider providerFindByWithNonTruncatedQueryShouldNotifyListener
+     * @dataProvider providerFindByWithTruncatedQueryShouldNotifyListener
      * @codeCoverageIgnore ::findBy
      */
-    public function testFindByWithNonTruncatedQueryShouldNotifyListener(?string $bucketName, InvokedCount $invokedCount, array $expectedArgs): void
+    public function testFindByWithTruncatedQueryShouldNotifyListener(?string $bucketName, ?int $limit, InvokedCount $invokedCount, array $expectedArgs): void
     {
         $listener1 = $this->createMock(QueryTruncatedListener::class);
         $listener1
@@ -282,30 +317,19 @@ class CephFileDataRepositoryTest extends TestCase
         if ($bucketName === null) {
             $this->sut->findAll();
         } else {
-            $this->sut->findBy(['bucket' => $bucketName]);
+            $this->sut->findBy(['bucket' => $bucketName], [], $limit);
         }
     }
 
     /**
      * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Limit 0 is not valid
+     * @expectedExceptionMessage limit 0 is not valid
      *
-     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimit
      */
     public function testFindByWithWrongLimitShouldThrowException(): void
     {
         $this->sut->findBy([], [], 0);
-    }
-
-    /**
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Offset -1 is not valid
-     *
-     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
-     */
-    public function testFindByWithWrongOffsetShouldThrowException(): void
-    {
-        $this->sut->findBy([], [], null, -1);
     }
 
     /**
@@ -322,29 +346,24 @@ class CephFileDataRepositoryTest extends TestCase
     public function providerFindBy(): array
     {
         return [
-            [[], null, null, $this->data],
-            [[], 2, null, array_slice($this->data, 0, 2)],
-            [[], 3, 1, array_slice($this->data, 1, 3)],
-            [['bucket' => 'mybucket1'], null, null, array_slice($this->data, 0, 2)],
-            [['bucket' => new Bucket('mybucket1')], 1, null, array_slice($this->data, 0, 1)],
-            [['bucket' => 'mybucket1'], 1, 1, array_slice($this->data, 1, 1)],
-            [['bucket' => new Bucket('mybucket1')], 1, 3, []],
-            [['id' => 'myobject1'], null, null, [$this->data[0], $this->data[2]]],
-            [['id' => 'myobject1'], 2, 1, [$this->data[2]]],
-            [['bucket' => new Bucket('mybucket3'), 'id' => 'myobject2'], null, null, [$this->data[3]]],
-            [['bucket' => 'mybucket3', 'id' => 'myobject2'], null, 1, []]
+            [[], null, false, $this->data],
+            [[], 2, false, array_slice($this->data, 0, 4), array_slice($this->data, 4, 1)],
+            [['bucket' => 'mybucket1'], null, false, array_slice($this->data, 0, 2), []],
+            [['bucket' => new Bucket('mybucket1')], 1, false, array_slice($this->data, 0, 1), array_slice($this->data, 1, 1)],
+            [['id' => 'myobject2'], null, false, [$this->data[1], $this->data[3]]],
+            [['bucket' => new Bucket('mybucket3'), 'id' => 'myobject2'], null, false, [$this->data[3]]]
         ];
     }
 
     /**
      * @dataProvider providerFindBy
      * @covers ::findBy
-     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimitAndOffset
+     * @covers \Coffreo\CephOdm\DataRepository\CephFileDataRepository::checkLimit
      * @covers ::bucketToString
      */
-    public function testFindBy(array $criteria, ?int $limit, ?int $offset, array $expectedResult): void
+    public function testFindBy(array $criteria, ?int $limit, bool $continue, array $expectedResult, ?array $expectedContinueResult = null): void
     {
-        $ret = $this->sut->findBy($criteria, null, $limit, $offset);
+        $ret = $this->sut->findBy($criteria, null, $limit, (int)$continue);
 
         foreach ($expectedResult as &$data) {
             if (!isset($data['Metadata'])) {
@@ -353,6 +372,56 @@ class CephFileDataRepositoryTest extends TestCase
         }
 
         $this->assertEquals($ret, $expectedResult);
+
+        if ($expectedContinueResult === null) {
+            return;
+        }
+
+        $ret = $this->sut->findBy($criteria, null, $limit, 1);
+
+        foreach ($expectedContinueResult as &$data) {
+            if (!isset($data['Metadata'])) {
+                $data['Metadata'] = [];
+            }
+        }
+
+        $this->assertEquals($ret, $expectedContinueResult);
+    }
+
+    public function providerFindByWithIdAndContinueShouldThrowException(): array
+    {
+        return [
+            [['bucket' => 'mybucket', 'id' => 'myid'], null, 1],
+            [['bucket' => 'mybucket', 'id' => 'myid'], 1, 1],
+            [['bucket' => 'mybucket', 'id' => 'myid'], 1, null],
+            [['id' => 'myid'], null, 1],
+            [['id' => 'myid'], 1, 1],
+            [['id' => 'myid'], 1, null]
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByWithIdAndContinueShouldThrowException
+     *
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage limit and continue arguments can't be used if an id is defined as criteria
+     *
+     * @covers ::findBy
+     */
+    public function testFindByWithIdAndContinueShouldThrowException(array $criteria, ?int $limit, ?int $continue): void
+    {
+        $this->sut->findBy($criteria, [], $limit, $continue);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage  limit can't be over than 1000 (actually 1001)
+     *
+     * @covers ::checkLimit
+     */
+    public function testFindByWithOverThan1000LimitShouldThrowException(): void
+    {
+        $this->sut->findBy([], [], 1001);
     }
 
     public function providerFindWithBucketAtInvalidFormatShouldThrowException(): array
@@ -376,5 +445,77 @@ class CephFileDataRepositoryTest extends TestCase
     public function testFindWithBucketAtInvalidFormatShouldThrowException($bucket)
     {
         $this->sut->find([$bucket, 'myobjectid']);
+    }
+
+    public function providerFindByFromWithIdShouldThrowException(): array
+    {
+        return [
+            [['bucket' => 'mybucket', 'id' => 'myid'], 'myid'],
+            [['id' => 'myid'], ['bucket' => 'myid']]
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByFromWithIdShouldThrowException
+     *
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage id can't be defined as criteria in findByFrom method
+     *
+     * @covers ::findBy
+     */
+    public function testFindByFromWithIdShouldThrowException(array $criteria, $from): void
+    {
+        $this->sut->findByFromCalled($criteria, $from, null, null);
+        $this->sut->findBy($criteria);
+    }
+
+    public function providerFindByFromWithWrongFromFormatShouldThrowException(): array
+    {
+        return [
+            ['myid'],
+            [new \stdClass()]
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByFromWithWrongFromFormatShouldThrowException
+     *
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage from must be an array or a string if bucket is in criteria
+     *
+     * @covers ::findByFromCalled
+     */
+    public function testFindByFromWithWrongFromFormatShouldThrowException($from): void
+    {
+        $this->sut->findByFromCalled(['id' => 'myid'], $from, null, null);
+        $this->sut->findBy(['id' => 'myid']);
+    }
+
+    public function providerFindByFrom(): array
+    {
+        return [
+            [['bucket' => 'mybucket3'], 'myobject1', array_slice($this->data, 3, 2)],
+            [[], ['mybucket1' => 'myobject1', 'mybucket3' => 'myobject2'], [$this->data[1], $this->data[4]]]
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByFrom
+     *
+     * @covers ::findByFromCalled
+     * @covers ::findBy
+     */
+    public function testFindByFrom(array $criteria, $from, array $expectedResult): void
+    {
+        $this->sut->findByFromCalled($criteria, $from, null, null);
+        $ret = $this->sut->findBy($criteria);
+
+        foreach ($expectedResult as &$data) {
+            if (!isset($data['Metadata'])) {
+                $data['Metadata'] = [];
+            }
+        }
+
+        $this->assertEquals($ret, $expectedResult);
     }
 }

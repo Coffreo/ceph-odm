@@ -4,6 +4,8 @@
 namespace Coffreo\CephOdm\Test\Unit\Repository;
 
 
+use Coffreo\CephOdm\Entity\File;
+use Coffreo\CephOdm\EventListener\FindByFromCallListener;
 use Coffreo\CephOdm\Repository\FileRepository;
 use Coffreo\CephOdm\ResultSet\FileResultSet;
 use Doctrine\SkeletonMapper\ObjectRepository\BasicObjectRepository;
@@ -206,5 +208,43 @@ class FileRepositoryTest extends TestCase
             ->willReturn($return);
 
         $this->assertEquals($return, $this->sut->getClassName());
+    }
+
+    /**
+     * @covers ::addFindByFromCallListener
+     * @covers ::findByFrom
+     */
+    public function testFindByFrom(): void
+    {
+        $listener1 = $this->createMock(FindByFromCallListener::class);
+        $listener1
+            ->expects($this->once())
+            ->method('findByFromCalled')
+            ->with(['bucket' => 'mybucket'], 'myid2', ['mykey' => 'myvalue'], 10);
+
+        $listener2 = $this->createMock(FindByFromCallListener::class);
+        $listener2
+            ->expects($this->once())
+            ->method('findByFromCalled')
+            ->with(['bucket' => 'mybucket'], 'myid2', ['mykey' => 'myvalue'], 10);
+
+        /** @var MockObject|FileRepository $sut */
+        $sut = $this
+            ->getMockBuilder(FileRepository::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['findBy'])
+            ->getMock();
+
+        $ret = new FileResultSet([new File()]);
+        $sut
+            ->expects($this->once())
+            ->method('findBy')
+            ->with(['bucket' => 'mybucket'], ['mykey' => 'myvalue'], 10, 1)
+            ->willReturn($ret);
+
+        $sut->addFindByFromCallListener($listener1);
+        $sut->addFindByFromCallListener($listener2);
+
+        $this->assertSame($ret, $sut->findByFrom(['bucket' => 'mybucket'], 'myid2', ['mykey' => 'myvalue'], 10));
     }
 }

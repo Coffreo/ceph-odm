@@ -6,26 +6,59 @@ namespace Coffreo\CephOdm\DataRepository;
 
 use Aws\S3\Exception\S3Exception;
 use Coffreo\CephOdm\Entity\Bucket;
+use Coffreo\CephOdm\EventListener\FindByFromCallListener;
 use Coffreo\CephOdm\EventListener\QueryTruncatedListener;
 
 /**
  * Repository for Ceph file objects
  */
-class CephFileDataRepository extends AbstractCephDataRepository
+class CephFileDataRepository extends AbstractCephDataRepository implements FindByFromCallListener
 {
     /**
      * @var QueryTruncatedListener[]
      */
     private $listeners = [];
 
+    /**
+     * Last key retrieved by bucket on truncated queries
+     *
+     * @var string[]
+     */
+    private $continueKeys = [];
+
+    /**
+     * Set to true when the next query to call must use findByFrom
+     *
+     * @var bool
+     */
+    private $findByFormNextCall = false;
+
     public function findAll(): array
     {
         return $this->findBy([]);
     }
 
-    public function findBy(array $criteria, ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array
+    public function findBy(array $criteria, ?array $orderBy = null, ?int $limitByBucket = null, ?int $continue = null): array
     {
-        $this->checkLimitAndOffset($limit, $offset);
+        if ($this->findByFormNextCall) {
+            $this->findByFormNextCall = false;
+
+            if (!empty($criteria['id'])) {
+                throw new \InvalidArgumentException(
+                    "id can't be defined as criteria in findByFrom method"
+                );
+            }
+
+            return $this->findBy($criteria, $orderBy, $limitByBucket, 1);
+        }
+
+        if (($limitByBucket || $continue) && !empty($criteria['id'])) {
+            throw new \InvalidArgumentException(
+                "limit and continue arguments can't be used if an id is defined as criteria"
+            );
+        }
+
+        $this->checkLimit($limitByBucket);
 
         $fields = array_keys($criteria);
         $idCount = 0;
@@ -44,12 +77,8 @@ class CephFileDataRepository extends AbstractCephDataRepository
         }
 
         if ($idCount == 2) {
-            // check $offset since no result shoud be returned if offset is not equal to 0 or null
-            if (!$offset && $data = $this->findByIdentifier($criteria)) {
-                return [$data];
-            }
-
-            return [];
+            $data = $this->findByIdentifier($criteria);
+            return $data ? [$data] : [];
         }
 
         $bucketNames = [];
@@ -62,14 +91,28 @@ class CephFileDataRepository extends AbstractCephDataRepository
             }
         }
 
+        $clientCrit = [];
+        if ($limitByBucket) {
+            $clientCrit['MaxKeys'] = $limitByBucket;
+        }
+
         $ret = [];
-        $count = 0;
         $bucketsTruncated = [];
         foreach ($bucketNames as $bucketName) {
-            $objects = $this->client->listObjects(['Bucket' => $bucketName]);
+            if ($continue) {
+                if (!$continueKey = $this->continueKeys[$bucketName] ?? null) {
+                    continue;
+                }
+
+                $clientCrit['Marker'] = $continueKey;
+            }
+            unset($this->continueKeys[$bucketName]);
+
+            $objects = $this->client->listObjects(array_merge(['Bucket' => $bucketName], $clientCrit));
 
             if (!empty($objects['IsTruncated'])) {
                 $bucketsTruncated[] = $bucketName;
+                $this->continueKeys[$bucketName] = $objects['NextMarker'];
             }
 
             foreach ($objects['Contents'] as $object) {
@@ -77,14 +120,7 @@ class CephFileDataRepository extends AbstractCephDataRepository
                     continue;
                 }
 
-                if ($count++ < $offset) {
-                    continue;
-                }
-
                 $ret[] = $this->findByIdentifier(['bucket' => $bucketName, 'id' => $object['Key']]);
-                if ($count == $limit + $offset) {
-                    break(2);
-                }
             }
         }
 
@@ -110,7 +146,7 @@ class CephFileDataRepository extends AbstractCephDataRepository
 
     public function findOneBy(array $criteria): ?array
     {
-        $data = $this->findBy($criteria, null, 1);
+        $data = $this->findBy($criteria);
 
         return $data[0] ?? null;
     }
@@ -161,5 +197,33 @@ class CephFileDataRepository extends AbstractCephDataRepository
     public function addQueryTruncatedListener(QueryTruncatedListener $listener): void
     {
         $this->listeners[] = $listener;
+    }
+
+    private function checkLimit(?int $limit): void
+    {
+        if ($limit !== null && $limit < 1) {
+            throw new \InvalidArgumentException(sprintf("limit %d is not valid", $limit));
+        }
+
+        if ($limit > 1000) {
+            throw new \InvalidArgumentException(sprintf("limit can't be over than 1000 (actually %d)", $limit));
+        }
+    }
+
+    public function findByFromCalled(array $criteria, $from, ?array $orderBy, ?int $limitByBucket)
+    {
+        $this->findByFormNextCall = true;
+
+        if (is_string($from) && !empty($criteria['bucket'])) {
+            $from = [$criteria['bucket'] => $from];
+        }
+
+        if (!is_array($from)) {
+            throw new \InvalidArgumentException("from must be an array or a string if bucket is in criteria");
+        }
+
+        foreach ($from as $bucketName => $continueKey) {
+            $this->continueKeys[$bucketName] = $continueKey;
+        }
     }
 }
