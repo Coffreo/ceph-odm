@@ -7,6 +7,7 @@ use Aws\CommandInterface;
 use Aws\S3\Exception\S3Exception;
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\DataRepository\CephFileDataRepository;
+use Coffreo\CephOdm\Entity\File;
 use Coffreo\CephOdm\EventListener\QueryTruncatedListener;
 use Doctrine\SkeletonMapper\Mapping\ClassMetadataInterface;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
@@ -155,17 +156,25 @@ class CephFileDataRepositoryTest extends TestCase
         $classMetadata
             ->method('getIdentifierFieldNames')
             ->willReturn(['bucket', 'id']);
+        $classMetadata
+            ->method('getFieldMappings')
+            ->willReturn([
+                'id' => ['name' => 'Key'],
+                'bucket' => ['name' => 'Bucket'],
+                'bin' => ['name' => 'Body'],
+                'metadata' => ['name' => 'Metadata']
+            ]);
 
         $objectManager = $this->createMock(ObjectManagerInterface::class);
         $objectManager
             ->method('getClassMetadata')
-            ->with('myclassname')
+            ->with(File::class)
             ->willReturn($classMetadata);
 
         $this->sut = new CephFileDataRepository(
             $client,
             $objectManager,
-            'myclassname'
+            File::class
         );
     }
 

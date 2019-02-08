@@ -15,7 +15,8 @@ class CephBucketPersister extends AbstractCephPersister
 
     protected function saveCephData(array $data): void
     {
-        if (empty($data['Bucket'])) {
+        $meta = $this->objectManager->getClassMetadata(Bucket::class)->getFieldMappings();
+        if (empty($data[$meta['name']['name']])) {
             throw new \InvalidArgumentException("Missing bucket identifier");
         }
 
