@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Use bucket as a full identifier of file
 
 # 0.3.0
 * Use native S3 client limit and allow to resume a truncated query

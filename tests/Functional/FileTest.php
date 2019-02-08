@@ -187,25 +187,21 @@ class FileTest extends AbstractFunctionalTestCase
         $this->client->createBucket(['Bucket' => 'mybucket2']);
 
         $expectedFile1 = new File();
-        $expectedFile1->setBucket($bucket);
-        $expectedFile1->assignIdentifier(['Key' => 'myid1']);
+        $expectedFile1->assignIdentifier(['Bucket' => $bucket, 'Key' => 'myid1']);
         $expectedFile1->setBin('mybody1');
         $expectedFile1->setAllMetadata(['mymetadata' => 'myvalue']);
 
         $expectedFile2 = new File();
-        $expectedFile2->setBucket($bucket);
-        $expectedFile2->assignIdentifier(['Key' => 'myid2']);
+        $expectedFile2->assignIdentifier(['Bucket' => $bucket, 'Key' => 'myid2']);
         $expectedFile2->setBin('mybody2');
 
         $expectedFile3 = new File();
-        $expectedFile3->setBucket($bucket);
-        $expectedFile3->assignIdentifier(['Key' => 'myid3']);
+        $expectedFile3->assignIdentifier(['Bucket' => $bucket, 'Key' => 'myid3']);
         $expectedFile3->setBin('mybody3');
         $expectedFile3->setAllMetadata(['filename' => 'myfile3.txt', 'mymetadata' => 'myvalue2']);
 
         $expectedFile4 = new File();
-        $expectedFile4->setBucket($bucket2);
-        $expectedFile4->assignIdentifier(['Key' => 'myid2']);
+        $expectedFile4->assignIdentifier(['Bucket' => $bucket2, 'Key' => 'myid2']);
         $expectedFile4->setBin('mybody4');
         $expectedFile4->setMetadata('filename', 'myfile4.txt');
 
@@ -336,8 +332,7 @@ class FileTest extends AbstractFunctionalTestCase
     public function testPersistInNonExistentBucketShouldThrowException(): void
     {
         $file = new File();
-        $file->setBucket(new Bucket('mynonexistentbucket'));
-        $file->assignIdentifier(['Key' => 'mykey']);
+        $file->assignIdentifier(['Bucket' => new Bucket('mynonexistentbucket'), 'Key' => 'mykey']);
         $file->setBin('mydata');
 
         $this->objectManager->persist($file);
@@ -352,8 +347,7 @@ class FileTest extends AbstractFunctionalTestCase
     public function testRemoveInNonExistentBucketShouldThrowException(): void
     {
         $file = new File();
-        $file->setBucket(new Bucket('mynonexistentbucket'));
-        $file->assignIdentifier(['Key' => 'mykey']);
+        $file->assignIdentifier(['Bucket' => new Bucket('mynonexistentbucket'), 'Key' => 'mykey']);
 
         $this->objectManager->remove($file);
         $this->objectManager->flush();

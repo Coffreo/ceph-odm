@@ -15,6 +15,10 @@ class CephFilePersister extends AbstractCephPersister
 
     protected function saveCephData(array $data): void
     {
+        if (isset($data['Bucket']) && $data['Bucket'] instanceof Bucket) {
+            $data['Bucket'] = $data['Bucket']->getName();
+        }
+
         $this->client->putObject($data);
     }
 

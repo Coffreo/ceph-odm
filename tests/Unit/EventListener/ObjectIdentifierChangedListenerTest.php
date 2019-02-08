@@ -19,16 +19,13 @@ class ObjectIdentifierChangedListenerTest extends TestCase
         $bucket = new Bucket('mybucketname');
 
         $file1 = new File();
-        $file1->setBucket($bucket);
-        $file1->assignIdentifier(['Key' => 'myidentifier']);
+        $file1->assignIdentifier(['Bucket' => $bucket, 'Key' => 'myidentifier']);
 
         $file2 = new File();
-        $file2->setBucket($bucket);
-        $file2->assignIdentifier(['Key' => 'myidentifier']);
+        $file2->assignIdentifier(['Bucket' => $bucket, 'Key' => 'myidentifier']);
 
         $file3 = new File();
-        $file3->setBucket($bucket);
-        $file3->assignIdentifier(['Key' => 'myidentifier']);
+        $file3->assignIdentifier(['Bucket' => $bucket, 'Key' => 'myidentifier']);
 
         return [
             'bucket_update' => [
@@ -125,8 +122,7 @@ class ObjectIdentifierChangedListenerTest extends TestCase
         }
 
         $objectIdentificationForIdentityMap = new File();
-        $objectIdentificationForIdentityMap->setBucket($identityMapBucket);
-        $objectIdentificationForIdentityMap->assignIdentifier(['Key' => $identityMapId]);
+        $objectIdentificationForIdentityMap->assignIdentifier(['Bucket' => $identityMapBucket, 'Key' => $identityMapId]);
 
         $objectIdentityMap = $this->createMock(ObjectIdentityMap::class);
         $objectIdentityMap
