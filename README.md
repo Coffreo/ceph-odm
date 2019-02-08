@@ -103,13 +103,13 @@ $object = $fileRepository->find([new \Coffreo\CephOdm\Entity\Bucket('my-bucket')
 
 echo $object->getFilename();    // test.txt
 ```
-In repository find methods, you can use the bucket name or a bucket object in your criteria:
+In repository find methods, you must use the bucket name or a bucket object in your criteria:
 ```php
 $object = $fileRepository->find([new \Coffreo\CephOdm\Entity\Bucket('my-bucket'), 'e223fc11-8046-4a84-98e2-0de912d071e9']);
 ```
 Is the same thing as:
 ```php
-$object = $fileRepository->find('my-bucket', 'e223fc11-8046-4a84-98e2-0de912d071e9']);
+$object = $fileRepository->find(['my-bucket', 'e223fc11-8046-4a84-98e2-0de912d071e9']);
 ```
 
 ### Other find methods
@@ -120,4 +120,14 @@ $objects = $fileRepository->findBy(['bucket' => 'my-bucket']);  // All objects o
 $objects = $fileRepository->findBy(['id' => 'e223fc11-8046-4a84-98e2-0de912d071e9']); // All objects in any bucket of the given id
 ```
 The previous statements only return objects that the **logged user owns**. For now, you can only perform a search on bucket and/or id.
+
+### Truncated results
+For the find methods which return many files (`findBy` and `findAll`), if there is too many results (more than 1000), the name of the buckets where all the files couldn't be returned are returned by `getBucketsTruncated`:
+```php
+$objects = $fileRepository->findAll();
+foreach ($objects->getBucketsTruncated() as $bucketName) {
+    // some files of the bucket $bucketName was not returned
+}
+```
+
 

@@ -2,6 +2,7 @@
 
 ## Master
 * Use native S3 client limit and allow to resume a truncated query
+* Add truncated results management in README
 * Add on FileResultSet method getBucketsTruncated that return bucket names where the previous query didn't return all files
 * Return \ArrayObject implementations instead of arrays in repositories for returning many entities
 * Launch an exception when updating an identifier of a non detached object
