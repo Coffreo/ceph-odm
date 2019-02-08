@@ -41,6 +41,7 @@ class CephFilePersisterTest extends TestCase
     /**
      * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::persistObject
      * @covers ::saveCephData
+     * @covers ::replaceBucketObjectByBucketName
      */
     public function testPersistObject(): void
     {
@@ -74,6 +75,7 @@ class CephFilePersisterTest extends TestCase
     /**
      * @covers \Coffreo\CephOdm\Persister\AbstractCephPersister::updateObject
      * @covers ::saveCephData
+     * @covers ::replaceBucketObjectByBucketName
      */
     public function testUpdateObject(): void
     {

@@ -15,20 +15,21 @@ class CephFilePersister extends AbstractCephPersister
 
     protected function saveCephData(array $data): void
     {
-        if (isset($data['Bucket']) && $data['Bucket'] instanceof Bucket) {
-            $data['Bucket'] = $data['Bucket']->getName();
-        }
-
+        $this->replaceBucketObjectByBucketName($data);
         $this->client->putObject($data);
     }
 
     protected function deleteCephIdentifier(array $identifier): void
     {
-        if (isset($identifier['Bucket']) && $identifier['Bucket'] instanceof Bucket) {
-            $identifier['Bucket'] = $identifier['Bucket']->getName();
-        }
-
+        $this->replaceBucketObjectByBucketName($identifier);
         $this->client->deleteObject($identifier);
+    }
+
+    private function replaceBucketObjectByBucketName(&$data): void
+    {
+        if (isset($data['Bucket']) && $data['Bucket'] instanceof Bucket) {
+            $data['Bucket'] = $data['Bucket']->getName();
+        }
     }
 
     protected function extractBucketName($object): ?string
