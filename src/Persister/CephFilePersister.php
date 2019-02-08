@@ -27,8 +27,11 @@ class CephFilePersister extends AbstractCephPersister
 
     private function replaceBucketObjectByBucketName(&$data): void
     {
-        if (isset($data['Bucket']) && $data['Bucket'] instanceof Bucket) {
-            $data['Bucket'] = $data['Bucket']->getName();
+        $meta = $this->objectManager->getClassMetadata(File::class)->getFieldMappings();
+        $bucketMapping = $meta['bucket']['name'];
+
+        if (isset($data[$bucketMapping]) && $data[$bucketMapping] instanceof Bucket) {
+            $data[$bucketMapping] = $data[$bucketMapping]->getName();
         }
     }
 

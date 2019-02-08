@@ -10,6 +10,7 @@ use Aws\S3\S3Client;
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Exception\Exception;
 use Coffreo\CephOdm\Persister\CephBucketPersister;
+use Doctrine\SkeletonMapper\Mapping\ClassMetadataInterface;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
 use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
 use PHPUnit\Framework\TestCase;
@@ -33,7 +34,21 @@ class CephBucketPersisterTest extends TestCase
     public function setUp()
     {
         $this->client = $this->createMock(DummyS3Client::class);
-        $this->sut = new CephBucketPersister($this->client, $this->createMock(ObjectManagerInterface::class), '');
+
+        $classMetadata = $this->createMock(ClassMetadataInterface::class);
+        $classMetadata
+            ->method('getFieldMappings')
+            ->willReturn([
+                'name' => ['name' => 'Bucket']
+            ]);
+
+        $objectManager = $this->createMock(ObjectManagerInterface::class);
+        $objectManager
+            ->method('getClassMetadata')
+            ->with(Bucket::class)
+            ->willReturn($classMetadata);
+
+        $this->sut = new CephBucketPersister($this->client, $objectManager, '');
     }
 
     /**

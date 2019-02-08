@@ -6,6 +6,7 @@ namespace Coffreo\CephOdm\DataRepository;
 
 use Aws\S3\Exception\S3Exception;
 use Coffreo\CephOdm\Entity\Bucket;
+use Coffreo\CephOdm\Entity\File;
 use Coffreo\CephOdm\EventListener\FindByFromCallListener;
 use Coffreo\CephOdm\EventListener\QueryTruncatedListener;
 
@@ -115,12 +116,15 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
                 $this->continueKeys[$bucketName] = $objects['NextMarker'];
             }
 
+            $meta = $this->objectManager->getClassMetadata(File::class)->getFieldMappings();
+            $idMapping = $meta['id']['name'];
+
             foreach ($objects['Contents'] as $object) {
-                if (isset($criteria['id']) && $object['Key'] != $criteria['id']) {
+                if (isset($criteria['id']) && $object[$idMapping] != $criteria['id']) {
                     continue;
                 }
 
-                $ret[] = $this->findByIdentifier(['bucket' => $bucketName, 'id' => $object['Key']]);
+                $ret[] = $this->findByIdentifier(['bucket' => $bucketName, 'id' => $object[$idMapping]]);
             }
         }
 
@@ -160,14 +164,18 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
      */
     private function findByIdentifier(array $identifier): ?array
     {
+        $meta = $this->objectManager->getClassMetadata(File::class)->getFieldMappings();
+        $bucketMapping = $meta['bucket']['name'];
+        $idMapping = $meta['id']['name'];
+
         $data = null;
         try {
-            $objectData = $this->client->getObject(['Bucket' => $identifier['bucket'], 'Key' => $identifier['id']]);
+            $objectData = $this->client->getObject([$bucketMapping => $identifier['bucket'], $idMapping => $identifier['id']]);
             $data = [
-                'Bucket' => $identifier['bucket'],
-                'Key' => $identifier['id'],
-                'Body' => $objectData['Body'],
-                'Metadata' => $objectData['Metadata'] ?? []
+                $bucketMapping => $identifier['bucket'],
+                $idMapping => $identifier['id'],
+                $meta['bin']['name'] => $objectData['Body'],
+                $meta['metadata']['name'] => $objectData['Metadata'] ?? []
             ];
         } catch (S3Exception $e) {
             if (!in_array($e->getAwsErrorCode(), ['NoSuchBucket', 'NoSuchKey'])) {

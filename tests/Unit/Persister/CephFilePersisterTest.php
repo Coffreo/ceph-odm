@@ -6,6 +6,7 @@ namespace Coffreo\CephOdm\Test\Unit\Persister;
 use Aws\S3\S3Client;
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Entity\File;
+use Doctrine\SkeletonMapper\Mapping\ClassMetadataInterface;
 use Doctrine\SkeletonMapper\ObjectManagerInterface;
 use Doctrine\SkeletonMapper\UnitOfWork\Change;
 use Doctrine\SkeletonMapper\UnitOfWork\ChangeSet;
@@ -35,7 +36,21 @@ class CephFilePersisterTest extends TestCase
     public function setUp()
     {
         $this->client = $this->createMock(DummyS3Client::class);
-        $this->sut = new CephFilePersister($this->client, $this->createMock(ObjectManagerInterface::class), '');
+
+        $classMetadata = $this->createMock(ClassMetadataInterface::class);
+        $classMetadata
+            ->method('getFieldMappings')
+            ->willReturn([
+                'bucket' => ['name' => 'Bucket']
+            ]);
+
+        $objectManager = $this->createMock(ObjectManagerInterface::class);
+        $objectManager
+            ->method('getClassMetadata')
+            ->with(File::class)
+            ->willReturn($classMetadata);
+
+        $this->sut = new CephFilePersister($this->client, $objectManager, '');
     }
 
     /**
@@ -114,9 +129,22 @@ class CephFilePersisterTest extends TestCase
     {
         $file = $this->createMock(File::class);
 
+        $classMetadata = $this->createMock(ClassMetadataInterface::class);
+        $classMetadata
+            ->method('getFieldMappings')
+            ->willReturn([
+                'bucket' => ['name' => 'Bucket']
+            ]);
+
+        $objectManager = $this->createMock(ObjectManagerInterface::class);
+        $objectManager
+            ->method('getClassMetadata')
+            ->with(File::class)
+            ->willReturn($classMetadata);
+
         $sut = $this
             ->getMockBuilder(CephFilePersister::class)
-            ->setConstructorArgs([$this->client, $this->createMock(ObjectManagerInterface::class), ''])
+            ->setConstructorArgs([$this->client, $objectManager, ''])
             ->setMethods(['getObjectIdentifier'])
             ->getMock();
 

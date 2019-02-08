@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Use metadata mapping instead of hardcode them
 * Use bucket as a full identifier of file
 
 # 0.3.0
