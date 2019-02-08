@@ -62,11 +62,8 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
         $this->checkLimit($limitByBucket);
 
         $fields = array_keys($criteria);
-        $idCount = 0;
         foreach ($fields as $field) {
-            if ($field == 'bucket' || $field == 'id') {
-                $idCount++;
-            } else {
+            if (!in_array($field, ['bucket', 'id'])) {
                 throw new \InvalidArgumentException(
                     sprintf("Allowed search criteria are only bucket and id (%s provided)", $field)
                 );
@@ -77,7 +74,7 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
             $criteria['bucket'] = $this->bucketToString($criteria['bucket']);
         }
 
-        if ($idCount == 2) {
+        if (isset($criteria['bucket']) && isset($criteria['id'])) {
             $data = $this->findByIdentifier($criteria);
             return $data ? [$data] : [];
         }
