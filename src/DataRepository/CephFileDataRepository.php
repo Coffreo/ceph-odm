@@ -63,9 +63,9 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
 
         $fields = array_keys($criteria);
         foreach ($fields as $field) {
-            if (!in_array($field, ['bucket', 'id'])) {
+            if (!in_array($field, ['bucket', 'id', 'metadata'])) {
                 throw new \InvalidArgumentException(
-                    sprintf("Allowed search criteria are only bucket and id (%s provided)", $field)
+                    sprintf("Allowed search criteria are only bucket, id and metadata (%s provided)", $field)
                 );
             }
         }
@@ -125,6 +125,10 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
             }
         }
 
+        if (isset($criteria['metadata'])) {
+            $this->filterByMetadata($ret, $criteria['metadata']);
+        }
+
         if ($bucketsTruncated) {
             foreach ($this->listeners as $listener) {
                 $listener->queryTruncated($bucketsTruncated);
@@ -132,6 +136,18 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
         }
 
         return $ret;
+    }
+
+    private function filterByMetadata(array &$result, array $criteriaMetadata): void
+    {
+        foreach ($result as $key => $res) {
+            foreach ($criteriaMetadata as $metadataName => $value) {
+                if (!isset($res['Metadata'][$metadataName]) || $res['Metadata'][$metadataName] != $value) {
+                    unset($result[$key]);
+                    break;
+                }
+            }
+        }
     }
 
     public function find($id): ?array

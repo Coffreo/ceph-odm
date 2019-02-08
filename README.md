@@ -121,6 +121,13 @@ $objects = $fileRepository->findBy(['id' => 'e223fc11-8046-4a84-98e2-0de912d071e
 ```
 The previous statements only return objects that the **logged user owns**. For now, you can only perform a search on bucket and/or id.
 
+### Filter results by metadata
+You can also use metadata as filter
+```php
+$objects = $fileRepository->findBy(['bucket' => 'my-bucket', 'metadata' => ['mymetadata' => 'myvalue']]);
+```
+Be careful, it's only a filter. It's not native, all files are retrieved, filtering is done after. Furthermore the criteria `metadata => []` won't return all files without metadata. It means no metadata filter, so all the files will be returned according by the possible other criteria.
+
 ### Truncated results
 For the find methods which return many files (`findBy` and `findAll`), if there is too many results (more than the limit you specified or 1000 by default), the names of the buckets where all the files couldn't be returned are returned by `getBucketsTruncated`:
 ```php
