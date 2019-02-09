@@ -128,6 +128,12 @@ $objects = $fileRepository->findBy(['bucket' => 'my-bucket', 'metadata' => ['mym
 ```
 Be careful, it's only a filter. It's not native, all files are retrieved, filtering is done after. Furthermore the criteria `metadata => []` won't return all files without metadata. It means no metadata filter, so all the files will be returned according by the possible other criteria.
 
+### Sort results
+The results can be sorted but it's not a database sort. The sort is done programmatically so it's not optimized and it's applyed after the bucket limit. By default, the results are ordered by bucket name and id. For ordering a query by a filename metadata (desc) and by id (asc):
+```php
+$objects = $fileRepository->findBy([], ['metadata' => ['filename' => -1], 'id' => 1]);
+```
+
 ### Truncated results
 For the find methods which return many files (`findBy` and `findAll`), if there is too many results (more than the limit you specified or 1000 by default), the names of the buckets where all the files couldn't be returned are returned by `getBucketsTruncated`:
 ```php

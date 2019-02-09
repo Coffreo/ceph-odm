@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Add sort for files
 * Allow to filter result by metadata
 * Use metadata mapping instead of hardcode them
 * Use bucket as a full identifier of file

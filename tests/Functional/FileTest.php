@@ -289,6 +289,18 @@ class FileTest extends AbstractFunctionalTestCase
         $this->compareFiles([$expectedFile2, $expectedFile3], $files);
     }
 
+    public function testFindByWithOrderBy(): void
+    {
+        list($expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4) = $this->createFindTestsData();
+        $repo = $this->objectManager->getRepository(File::class);
+
+        $files = $repo->findBy(['bucket' => 'mybucket'], ['id' => -1]);
+        $this->compareFiles([$expectedFile3, $expectedFile2, $expectedFile1], $files);
+
+        $files = $repo->findBy([], ['metadata' => ['filename' => -1], 'id' => 1]);
+        $this->compareFiles([$expectedFile4, $expectedFile3, $expectedFile1, $expectedFile2], $files);
+    }
+
     /**
      * @param File[] $expectedFiles
      * @param File[] $actualFiles
