@@ -259,11 +259,7 @@ class CephFileDataRepositoryTest extends TestCase
         $ret = $this->sut->findAll();
 
         $expected = $this->data;
-        foreach ($expected as &$data) {
-            if (!isset($data['Metadata'])) {
-                $data['Metadata'] = [];
-            }
-        }
+        $this->replaceEmptyMetadataByArray($expected);
 
         $this->assertEquals($expected, $ret);
     }
@@ -375,12 +371,7 @@ class CephFileDataRepositoryTest extends TestCase
     public function testFindBy(array $criteria, ?int $limit, bool $continue, array $expectedResult, ?array $expectedContinueResult = null): void
     {
         $ret = $this->sut->findBy($criteria, null, $limit, (int)$continue);
-
-        foreach ($expectedResult as &$data) {
-            if (!isset($data['Metadata'])) {
-                $data['Metadata'] = [];
-            }
-        }
+        $this->replaceEmptyMetadataByArray($expectedResult);
 
         $this->assertEquals($ret, $expectedResult);
 
@@ -389,12 +380,7 @@ class CephFileDataRepositoryTest extends TestCase
         }
 
         $ret = $this->sut->findBy($criteria, null, $limit, 1);
-
-        foreach ($expectedContinueResult as &$data) {
-            if (!isset($data['Metadata'])) {
-                $data['Metadata'] = [];
-            }
-        }
+        $this->replaceEmptyMetadataByArray($expectedContinueResult);
 
         $this->assertEquals($ret, $expectedContinueResult);
     }
@@ -511,6 +497,20 @@ class CephFileDataRepositoryTest extends TestCase
     }
 
     /**
+     * Add an empty array as metadata to expected results if metadata is missing
+     *
+     * @param File[] $result expected result
+     */
+    private function replaceEmptyMetadataByArray(array &$result): void
+    {
+        foreach ($result as &$data) {
+            if (!isset($data['Metadata'])) {
+                $data['Metadata'] = [];
+            }
+        }
+    }
+
+    /**
      * @dataProvider providerFindByFrom
      *
      * @covers ::findByFromCalled
@@ -521,11 +521,7 @@ class CephFileDataRepositoryTest extends TestCase
         $this->sut->findByFromCalled($criteria, $from, null, null);
         $ret = $this->sut->findBy($criteria);
 
-        foreach ($expectedResult as &$data) {
-            if (!isset($data['Metadata'])) {
-                $data['Metadata'] = [];
-            }
-        }
+        $this->replaceEmptyMetadataByArray($expectedResult);
 
         $this->assertEquals($ret, $expectedResult);
     }
