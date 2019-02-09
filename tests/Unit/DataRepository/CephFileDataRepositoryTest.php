@@ -385,6 +385,39 @@ class CephFileDataRepositoryTest extends TestCase
         $this->assertEquals($ret, $expectedContinueResult);
     }
 
+    public function providerFindByWithOrderBy(): array
+    {
+        return [
+            [['bucket' => -1], [2, 3, 4, 0, 1]],
+            [['id' => 1], [0, 2, 1, 3, 4]],
+            [['id' => 1, 'bucket' => -1], [2, 0, 3, 1, 4]],
+            [['bucket' => -1, 'id' => -1], [4, 3, 2, 1, 0]],
+            [['metadata' => ['mymetadata2' => -1]], [3, 4, 2, 0, 1]],
+            [['metadata' => ['mymetadata1' => 1]], [1, 3, 0, 4, 2]],
+            [['metadata' => ['mymetadata1' => 1], 'bucket' => -1], [3, 1, 4, 0, 2]],
+            [['bucket' => -1, 'metadata' => ['mymetadata2' => -1]], [3, 4, 2, 0, 1]]
+        ];
+    }
+
+    /**
+     * @dataProvider providerFindByWithOrderBy
+     *
+     * @covers ::findBy
+     * @covers ::sort
+     */
+    public function testFindByWithOrderBy(array $orderBy, array $expectedResultKeys): void
+    {
+        $expectedResult = [];
+        foreach ($expectedResultKeys as $key) {
+            $expectedResult[] = $this->data[$key];
+        }
+
+        $ret = $this->sut->findBy([], $orderBy);
+        $this->replaceEmptyMetadataByArray($expectedResult);
+
+        $this->assertEquals($ret, $expectedResult);
+    }
+
     public function providerFindByWithIdAndContinueShouldThrowException(): array
     {
         return [

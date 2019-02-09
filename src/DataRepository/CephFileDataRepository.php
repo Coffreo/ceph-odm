@@ -129,6 +129,10 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
             $this->filterByMetadata($ret, $criteria['metadata']);
         }
 
+        if ($orderBy) {
+            $this->sort($ret, $orderBy);
+        }
+
         if ($bucketsTruncated) {
             foreach ($this->listeners as $listener) {
                 $listener->queryTruncated($bucketsTruncated);
@@ -136,6 +140,38 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
         }
 
         return $ret;
+    }
+
+    private function sort(array &$result, $orderBy): void
+    {
+        $sortByArrayCriteria = function ($a, $b, array $orderBy, array $mappings) use (&$sortByArrayCriteria): int
+        {
+            foreach ($orderBy as $key => $direction) {
+                $mappedKey = empty($mappings[$key]['name']) ? $key : $mappings[$key]['name'];
+                if (is_array($direction)) {
+                    $valA = isset($a[$mappedKey]) && is_array($a[$mappedKey]) ? $a[$mappedKey] : [];
+                    $valB = isset($b[$mappedKey]) && is_array($b[$mappedKey]) ? $b[$mappedKey] : [];
+
+                    $res = $sortByArrayCriteria($valA, $valB, $direction, []);
+                } else {
+                    $valA = array_key_exists($mappedKey, $a) ? $a[$mappedKey] : null;
+                    $valB = array_key_exists($mappedKey, $b) ? $b[$mappedKey] : null;
+
+                    $res = strcmp($valA, $valB) * ($direction >= 0 ? 1 : -1);
+                }
+
+                if ($res != 0) {
+                    return $res;
+                }
+            }
+
+            return 0;
+        };
+
+        $mappings = $this->objectManager->getClassMetadata(File::class)->getFieldMappings();
+        usort($result, function ($a, $b) use ($orderBy, $sortByArrayCriteria, $mappings): int {
+            return $sortByArrayCriteria($a, $b, $orderBy, $mappings);
+        });
     }
 
     private function filterByMetadata(array &$result, array $criteriaMetadata): void
