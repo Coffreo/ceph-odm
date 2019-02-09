@@ -14,6 +14,7 @@ env:
 before_install:
   - docker network create --subnet=172.32.205.0/24 --gateway=172.32.205.1 ceph
   - docker-compose -f docker/docker-compose.yml up -d
+  - docker-compose -f docker/docker-compose.yml exec ceph radosgw-admin user create --uid=user2 --display-name=user2 --access-key=user2AccessKey --secret-key=user2SecretKey
 
 install:
   - make install

@@ -9,8 +9,10 @@
 >
     <php>
         <env name="CEPHDEMO_IP" value="172.32.205.77" />
-        <env name="CEPHDEMO_USER" value="sandboxAccessKey" />
-        <env name="CEPHDEMO_PASS" value="sandboxSecretKey" />
+        <!--<env name="CEPHDEMO_USER" value="sandboxAccessKey" />
+        <env name="CEPHDEMO_PASS" value="sandboxSecretKey" />-->
+        <env name="CEPHDEMO_USER" value="user2AccessKey" />
+        <env name="CEPHDEMO_PASS" value="user2SecretKey" />
     </php>
     <testsuites>
         <testsuite name="unit">
