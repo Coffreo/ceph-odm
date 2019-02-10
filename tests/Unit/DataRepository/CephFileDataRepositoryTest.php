@@ -259,7 +259,7 @@ class CephFileDataRepositoryTest extends TestCase
         $ret = $this->sut->findAll();
 
         $expected = $this->data;
-        $this->replaceEmptyMetadataByArray($expected);
+        $this->prepareExpectedResult($expected, true);
 
         $this->assertEquals($expected, $ret);
     }
@@ -351,13 +351,13 @@ class CephFileDataRepositoryTest extends TestCase
     public function providerFindBy(): array
     {
         return [
-            [[], null, false, $this->data],
-            [[], 2, false, array_slice($this->data, 0, 4), array_slice($this->data, 4, 1)],
-            [['bucket' => 'mybucket1'], null, false, array_slice($this->data, 0, 2), []],
-            [['bucket' => 'mybucket1', 'metadata' => ['mymetadata1' => 'myvalue1']], null, false, [$this->data[0]], []],
-            [['bucket' => new Bucket('mybucket1')], 1, false, array_slice($this->data, 0, 1), array_slice($this->data, 1, 1)],
-            [['id' => 'myobject2'], null, false, [$this->data[1], $this->data[3]]],
-            [['bucket' => new Bucket('mybucket3'), 'id' => 'myobject2'], null, false, [$this->data[3]]]
+            [[], null, false, true, $this->data],
+            [[], 2, false, true, array_slice($this->data, 0, 4), array_slice($this->data, 4, 1)],
+            [['bucket' => 'mybucket1'], null, false, true, array_slice($this->data, 0, 2), []],
+            [['bucket' => 'mybucket1', 'metadata' => ['mymetadata1' => 'myvalue1']], null, false, false, [$this->data[0]], []],
+            [['bucket' => new Bucket('mybucket1')], 1, false, true, array_slice($this->data, 0, 1), array_slice($this->data, 1, 1)],
+            [['id' => 'myobject2'], null, false, true, [$this->data[1], $this->data[3]]],
+            [['bucket' => new Bucket('mybucket3'), 'id' => 'myobject2'], null, false, false, [$this->data[3]]]
         ];
     }
 
@@ -368,10 +368,10 @@ class CephFileDataRepositoryTest extends TestCase
      * @covers ::bucketToString
      * @covers ::filterByMetadata
      */
-    public function testFindBy(array $criteria, ?int $limit, bool $continue, array $expectedResult, ?array $expectedContinueResult = null): void
+    public function testFindBy(array $criteria, ?int $limit, bool $continue, bool $lazyLoad, array $expectedResult, ?array $expectedContinueResult = null): void
     {
         $ret = $this->sut->findBy($criteria, null, $limit, (int)$continue);
-        $this->replaceEmptyMetadataByArray($expectedResult);
+        $this->prepareExpectedResult($expectedResult, $lazyLoad);
 
         $this->assertEquals($ret, $expectedResult);
 
@@ -380,7 +380,7 @@ class CephFileDataRepositoryTest extends TestCase
         }
 
         $ret = $this->sut->findBy($criteria, null, $limit, 1);
-        $this->replaceEmptyMetadataByArray($expectedContinueResult);
+        $this->prepareExpectedResult($expectedContinueResult, $lazyLoad);
 
         $this->assertEquals($ret, $expectedContinueResult);
     }
@@ -388,14 +388,14 @@ class CephFileDataRepositoryTest extends TestCase
     public function providerFindByWithOrderBy(): array
     {
         return [
-            [['bucket' => -1], [2, 3, 4, 0, 1]],
-            [['id' => 1], [0, 2, 1, 3, 4]],
-            [['id' => 1, 'bucket' => -1], [2, 0, 3, 1, 4]],
-            [['bucket' => -1, 'id' => -1], [4, 3, 2, 1, 0]],
-            [['metadata' => ['mymetadata2' => -1]], [3, 4, 2, 0, 1]],
-            [['metadata' => ['mymetadata1' => 1]], [1, 3, 0, 4, 2]],
-            [['metadata' => ['mymetadata1' => 1], 'bucket' => -1], [3, 1, 4, 0, 2]],
-            [['bucket' => -1, 'metadata' => ['mymetadata2' => -1]], [3, 4, 2, 0, 1]]
+            [['bucket' => -1], true, [2, 3, 4, 0, 1]],
+            [['id' => 1], true, [0, 2, 1, 3, 4]],
+            [['id' => 1, 'bucket' => -1], true, [2, 0, 3, 1, 4]],
+            [['bucket' => -1, 'id' => -1], true, [4, 3, 2, 1, 0]],
+            [['metadata' => ['mymetadata2' => -1]], false, [3, 4, 2, 0, 1]],
+            [['metadata' => ['mymetadata1' => 1]], false, [1, 3, 0, 4, 2]],
+            [['metadata' => ['mymetadata1' => 1], 'bucket' => -1], false, [3, 1, 4, 0, 2]],
+            [['bucket' => -1, 'metadata' => ['mymetadata2' => -1]], false, [3, 4, 2, 0, 1]]
         ];
     }
 
@@ -405,7 +405,7 @@ class CephFileDataRepositoryTest extends TestCase
      * @covers ::findBy
      * @covers ::sort
      */
-    public function testFindByWithOrderBy(array $orderBy, array $expectedResultKeys): void
+    public function testFindByWithOrderBy(array $orderBy, bool $lazyLoad, array $expectedResultKeys): void
     {
         $expectedResult = [];
         foreach ($expectedResultKeys as $key) {
@@ -413,7 +413,7 @@ class CephFileDataRepositoryTest extends TestCase
         }
 
         $ret = $this->sut->findBy([], $orderBy);
-        $this->replaceEmptyMetadataByArray($expectedResult);
+        $this->prepareExpectedResult($expectedResult, $lazyLoad);
 
         $this->assertEquals($ret, $expectedResult);
     }
@@ -530,14 +530,18 @@ class CephFileDataRepositoryTest extends TestCase
     }
 
     /**
-     * Add an empty array as metadata to expected results if metadata is missing
+     * Modify the expected result depending on the test context
      *
      * @param File[] $result expected result
+     * @param bool $lazyLoad is lazyLoad, metadata and bin are not returned
      */
-    private function replaceEmptyMetadataByArray(array &$result): void
+    private function prepareExpectedResult(array &$result, bool $lazyLoad): void
     {
         foreach ($result as &$data) {
-            if (!isset($data['Metadata'])) {
+            if ($lazyLoad) {
+                unset($data['Metadata']);
+                unset($data['Body']);
+            } elseif (!isset($data['Metadata'])) {
                 $data['Metadata'] = [];
             }
         }
@@ -554,7 +558,7 @@ class CephFileDataRepositoryTest extends TestCase
         $this->sut->findByFromCalled($criteria, $from, null, null);
         $ret = $this->sut->findBy($criteria);
 
-        $this->replaceEmptyMetadataByArray($expectedResult);
+        $this->prepareExpectedResult($expectedResult, true);
 
         $this->assertEquals($ret, $expectedResult);
     }

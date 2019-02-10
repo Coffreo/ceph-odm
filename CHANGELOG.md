@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Allow lazy loading when query return many results
 * Add sort for files
 * Allow to filter result by metadata
 * Use metadata mapping instead of hardcode them

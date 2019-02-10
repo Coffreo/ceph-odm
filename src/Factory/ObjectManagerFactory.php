@@ -51,7 +51,11 @@ class ObjectManagerFactory
             $classMetadataFactory,
             $eventManager
         );
-        $eventManager->addEventListener(Events::postLoad, new AddObjectListenerListener($objectIdentityMap));
+        $eventManager->addEventListener(Events::postLoad, new AddObjectListenerListener(
+            $objectIdentityMap,
+            $client,
+            $classMetadataFactory
+        ));
 
         $fileDataRepository = new CephFileDataRepository($client, $objectManager, File::class);
         $bucketDataRepository = new CephBucketDataRepository($client, $objectManager, Bucket::class);

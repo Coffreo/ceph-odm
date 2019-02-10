@@ -96,6 +96,8 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
 
         $ret = [];
         $bucketsTruncated = [];
+        $hasMetadataCriteria = isset($criteria['metadata']);
+        $lazyLoad = !$hasMetadataCriteria && !isset($orderBy['bin']) && !isset($orderBy['metadata']);
         foreach ($bucketNames as $bucketName) {
             if ($continue) {
                 if (!$continueKey = $this->continueKeys[$bucketName] ?? null) {
@@ -121,11 +123,11 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
                     continue;
                 }
 
-                $ret[] = $this->findByIdentifier(['bucket' => $bucketName, 'id' => $object[$idMapping]]);
+                $ret[] = $this->findByIdentifier(['bucket' => $bucketName, 'id' => $object[$idMapping]], $lazyLoad);
             }
         }
 
-        if (isset($criteria['metadata'])) {
+        if ($hasMetadataCriteria) {
             $this->filterByMetadata($ret, $criteria['metadata']);
         }
 
@@ -211,25 +213,32 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
      *
      * @return array|null
      */
-    private function findByIdentifier(array $identifier): ?array
+    private function findByIdentifier(array $identifier, bool $lazyLoad = false): ?array
     {
         $meta = $this->objectManager->getClassMetadata(File::class)->getFieldMappings();
         $bucketMapping = $meta['bucket']['name'];
         $idMapping = $meta['id']['name'];
 
         $data = null;
-        try {
-            $objectData = $this->client->getObject([$bucketMapping => $identifier['bucket'], $idMapping => $identifier['id']]);
-            $data = [
-                $bucketMapping => $identifier['bucket'],
-                $idMapping => $identifier['id'],
-                $meta['bin']['name'] => $objectData['Body'],
-                $meta['metadata']['name'] => $objectData['Metadata'] ?? []
-            ];
-        } catch (S3Exception $e) {
-            if (!in_array($e->getAwsErrorCode(), ['NoSuchBucket', 'NoSuchKey'])) {
-                throw $e;
+        if (!$lazyLoad) {
+            try {
+                $objectData = $this->client->getObject([$bucketMapping => $identifier['bucket'], $idMapping => $identifier['id']]);
+                $data = [
+                    $meta['bin']['name'] => $objectData['Body'],
+                    $meta['metadata']['name'] => $objectData['Metadata'] ?? []
+                ];
+
+
+            } catch (S3Exception $e) {
+                if (!in_array($e->getAwsErrorCode(), ['NoSuchBucket', 'NoSuchKey'])) {
+                    throw $e;
+                }
             }
+        }
+
+        if ($data || $lazyLoad) {
+            $data[$bucketMapping] = $identifier['bucket'];
+            $data[$idMapping] = $identifier['id'];
         }
 
         return $data;

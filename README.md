@@ -175,3 +175,6 @@ $objects = $fileRepository->findByFrom(['bucket' => 'mybucket'], ['mybucket' => 
 // Returns files myid4, myid5, myid6... but not myid3
 // Since the criteria specifies the bucket, you can even simplify by: findByFrom(['bucket' => 'mybucket'], 'myid3')
 ```
+
+## Lazy load
+When queries that return multiple results are used (i.e. queries which don't specify bucket and id), `bin` and `metadata` are not loaded directly since getting them requires to perform another specific server call per result. This library uses in these cases a lazy load strategy and retrieves bin and metadata only when `getBin`, `getAllMetadata`, `getMetadata` or `setMetadata` is called. You won't normally have to worry about it but it could be useful to be aware about it.

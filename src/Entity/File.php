@@ -5,7 +5,9 @@ namespace Coffreo\CephOdm\Entity;
 
 
 use Coffreo\CephOdm\EventListener\IdentifierChangedListener;
+use Coffreo\CephOdm\EventListener\LazyLoadedProperyGetListener;
 use Coffreo\CephOdm\EventListener\NotifyIdentifierChanged;
+use Coffreo\CephOdm\EventListener\NotifyLazyLoadedPropertyGet;
 use Doctrine\Common\NotifyPropertyChanged;
 use Doctrine\Common\PropertyChangedListener;
 use Doctrine\SkeletonMapper\Hydrator\HydratableInterface;
@@ -21,7 +23,7 @@ use Ramsey\Uuid\Uuid;
 /**
  * Ceph file
  */
-class File implements HydratableInterface, IdentifiableInterface, LoadMetadataInterface, NotifyPropertyChanged, PersistableInterface, NotifyIdentifierChanged
+class File implements HydratableInterface, IdentifiableInterface, LoadMetadataInterface, NotifyPropertyChanged, PersistableInterface, NotifyIdentifierChanged, NotifyLazyLoadedPropertyGet
 {
     /**
      * Ceph identifier
@@ -47,9 +49,9 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     /**
      * Metadata
      *
-     * @var array
+     * @var array|null
      */
-    private $metadata = [];
+    private $metadata = null;
 
     /**
      * Property changed listeners
@@ -66,6 +68,13 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     private $identifierChangedListeners = [];
 
     /**
+     * Listener for lazy load behavior
+     *
+     * @var LazyLoadedProperyGetListener[]
+     */
+    private $lazyLoadListeners = [];
+
+    /**
      * @codeCoverageIgnore
      */
     public function getId(): ?string
@@ -73,11 +82,12 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
         return $this->id;
     }
 
-    /**
-     * @codeCoverageIgnore
-     */
     public function getBin(): ?string
     {
+        if ($this->bin === null) {
+            $this->onLazyLoadedPropertyGet('bin');
+        }
+
         return $this->bin;
     }
 
@@ -101,11 +111,12 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
         $this->bucket = $bucket;
     }
 
-    /**
-     * @codeCoverageIgnore
-     */
-    public function getAllMetadata(): array
+    public function getAllMetadata(): ?array
     {
+        if ($this->metadata === null) {
+            $this->onLazyLoadedPropertyGet('metadata');
+        }
+
         return $this->metadata;
     }
 
@@ -128,6 +139,10 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     public function setMetadata(string $name, string $value): void
     {
         $this->checkMetadataName($name);
+
+        if ($this->metadata === null) {
+            $this->onLazyLoadedPropertyGet('metadata');
+        }
 
         $new = $this->metadata;
         $new[$name] = $value;
@@ -163,6 +178,10 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     {
        $this->checkMetadataName($name);
 
+        if ($this->metadata === null) {
+            $this->onLazyLoadedPropertyGet('metadata');
+        }
+
         if (isset($this->metadata[$name])) {
             return $this->metadata[$name];
         }
@@ -186,7 +205,10 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     {
         $this->id = $data['Key'];
         $this->bucket = new Bucket($data['Bucket']);
-        $this->bin = $data['Body']->getContents();
+
+        if (isset($data['Body'])) {
+            $this->bin = $data['Body']->getContents();
+        }
 
         if (isset($data['Metadata'])) {
             $this->metadata = $data['Metadata'];
@@ -229,6 +251,14 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     public function addIdentifierChangedListener(IdentifierChangedListener $listener)
     {
         $this->identifierChangedListeners[] = $listener;
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public function addLazyLoadedPropertyGetListener(LazyLoadedProperyGetListener $listener): void
+    {
+        $this->lazyLoadListeners[] = $listener;
     }
 
     public function preparePersistChangeSet(): array
@@ -300,6 +330,13 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     {
         foreach ($this->identifierChangedListeners as $listener) {
             $listener->identifierChanged($this, $propName, $oldValue, $newValue);
+        }
+    }
+
+    protected function onLazyLoadedPropertyGet(string $propertyName): void
+    {
+        foreach ($this->lazyLoadListeners as $listener) {
+            $listener->lazyLoadedPropertyGet($this, $propertyName);
         }
     }
 }
