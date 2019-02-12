@@ -11,5 +11,5 @@ interface QueryTruncatedListener
      *
      * @param string[] $bucketNames buckets for which the query was truncated
      */
-    public function queryTruncated(array $bucketNames);
+    public function queryTruncated(array $bucketNames): void;
 }

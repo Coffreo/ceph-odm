@@ -25,7 +25,7 @@ class ObjectIdentifierChangedListener implements IdentifierChangedListener
     /**
      * Throw exception when trying to change a non detached object identifier
      */
-    public function identifierChanged($sender, $propertyName, $oldValue, $newValue)
+    public function identifierChanged($sender, $propertyName, $oldValue, $newValue): void
     {
         if (!$sender instanceof File || empty($oldValue) || $oldValue == $newValue) {
             return;

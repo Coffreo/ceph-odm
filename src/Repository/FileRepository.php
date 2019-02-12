@@ -30,7 +30,7 @@ class FileRepository extends AbstractRepositoryDecorator implements QueryTruncat
     /**
      * @codeCoverageIgnore
      */
-    public function queryTruncated(array $bucketNames)
+    public function queryTruncated(array $bucketNames): void
     {
         $this->bucketNames = $bucketNames;
     }

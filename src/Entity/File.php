@@ -248,7 +248,7 @@ class File implements HydratableInterface, IdentifiableInterface, LoadMetadataIn
     /**
      * @codeCoverageIgnore
      */
-    public function addIdentifierChangedListener(IdentifierChangedListener $listener)
+    public function addIdentifierChangedListener(IdentifierChangedListener $listener): void
     {
         $this->identifierChangedListeners[] = $listener;
     }

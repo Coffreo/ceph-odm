@@ -15,8 +15,6 @@ interface IdentifierChangedListener
      * @param string $propertyName The name of the identifier that changed.
      * @param mixed  $oldValue     The old value of the identifier that changed.
      * @param mixed  $newValue     The new value of the identifier that changed.
-     *
-     * @return void
      */
-    public function identifierChanged($sender, $propertyName, $oldValue, $newValue);
+    public function identifierChanged($sender, $propertyName, $oldValue, $newValue): void;
 }

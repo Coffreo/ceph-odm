@@ -276,7 +276,7 @@ class CephFileDataRepository extends AbstractCephDataRepository implements FindB
         }
     }
 
-    public function findByFromCalled(array $criteria, $from, ?array $orderBy, ?int $limitByBucket)
+    public function findByFromCalled(array $criteria, $from, ?array $orderBy, ?int $limitByBucket): void
     {
         $this->findByFormNextCall = true;
 
