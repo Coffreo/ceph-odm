@@ -6,6 +6,7 @@ namespace Coffreo\CephOdm\Test\Unit\Entity;
 use Coffreo\CephOdm\Entity\Bucket;
 use Coffreo\CephOdm\Entity\File;
 use Coffreo\CephOdm\EventListener\IdentifierChangedListener;
+use Coffreo\CephOdm\EventListener\LazyLoadedProperyGetListener;
 use Doctrine\Common\PropertyChangedListener;
 use Doctrine\SkeletonMapper\Mapping\ClassMetadataInterface;
 use Doctrine\SkeletonMapper\ObjectManager;
@@ -60,7 +61,7 @@ class FileTest extends TestCase
         $sut = $this->createSutForTestingSetter(
             'metadata',
             [
-                [],
+                null,
                 ['filename' => 'myfilename'],
                 ['mymetadata2' => 'myvalue2', 'mymetadata3' => 'myvalue3']
             ]
@@ -81,7 +82,7 @@ class FileTest extends TestCase
         $sut = $this->createSutForTestingSetter(
             'metadata',
             [
-                [],
+                null,
                 ['my.metadata1' => 'myvalue1'],
                 ['my.metadata1' => 'myvalue1', 'filename' => 'myfilename']
             ]
@@ -102,7 +103,7 @@ class FileTest extends TestCase
         $sut = $this->createSutForTestingSetter(
             'metadata',
             [
-                [],
+                null,
                 ['filename' => 'myfilename', 'mymetadata2' => 'myvalue2'],
                 ['mymetadata2' => 'myvalue2'],
                 ['mymetadata2' => 'myvalue2'],
@@ -176,7 +177,7 @@ class FileTest extends TestCase
                 'myid',
                 'mybucketname',
                 'mybinarycontent',
-                []
+                null
             ],
             [
                 ['Key' => 'myid', 'Bucket' => 'mybucketname', 'Body' => $streamMock, 'Metadata' => ['filename' => 'myfilename']],
@@ -204,7 +205,7 @@ class FileTest extends TestCase
         string $expectedId,
         string $expectedBucketName,
         string $expectedBin,
-        array $expectedMetadata
+        ?array $expectedMetadata
     ): void
     {
         $sut = new File();
@@ -432,6 +433,67 @@ class FileTest extends TestCase
 
         // Since @doesNotPerformAssertions doesn't allow to perform code coverage
         $this->assertTrue(true);
+    }
+
+    public function providerOnLazyLoadedPropertyGet(): array
+    {
+        return [
+            [
+                function(File $sut): ?string { return $sut->getBin(); },
+                function(File $sut): void { $sut->setBin('mydata'); },
+                'bin',
+                'mydata'
+            ],
+            [
+                function(File $sut): ?array { return $sut->getAllMetadata(); },
+                function(File $sut): void { $sut->setAllMetadata(['mymetadata' => 'myvalue']); },
+                'metadata',
+                ['mymetadata' => 'myvalue']
+
+            ],
+            [
+                function(File $sut): ?string { return $sut->getMetadata('mymetadata'); },
+                function(File $sut): void { $sut->setAllMetadata(['mymetadata' => 'myvalue']); },
+                'metadata',
+                'myvalue'
+            ],
+            [
+                function(File $sut): void { $sut->setMetadata('mymetadata', 'myvalue'); },
+                function(File $sut): void {},
+                'metadata',
+                null
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider providerOnLazyLoadedPropertyGet
+     *
+     * @covers ::onLazyLoadedPropertyGet
+     * @covers ::getBin
+     * @covers ::getAllMetadata
+     * @covers ::setMetadata
+     * @covers ::getMetadata
+     */
+    public function testOnLazyLoadedPropertyGet(callable $callToTest, callable $associatedSetter, string $expectedPropertyName, $expectedResult): void
+    {
+        $sut = new File();
+
+        $listener1 = $this->createMock(LazyLoadedProperyGetListener::class);
+        $listener1
+            ->expects($this->once())
+            ->method('lazyLoadedPropertyGet')
+            ->with($sut, $expectedPropertyName);
+
+        $sut->addLazyLoadedPropertyGetListener($listener1);
+
+        $callToTest($sut);
+        $associatedSetter($sut);
+        $result = $callToTest($sut);
+
+        if ($expectedResult !== null) {
+            $this->assertEquals($expectedResult, $result);
+        }
     }
 
     /**

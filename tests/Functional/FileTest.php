@@ -176,6 +176,7 @@ class FileTest extends AbstractFunctionalTestCase
         $expectedFile2 = new File();
         $expectedFile2->assignIdentifier(['Bucket' => $bucket, 'Key' => 'myid2']);
         $expectedFile2->setBin('mybody2');
+        $expectedFile2->setAllMetadata([]);
 
         $expectedFile3 = new File();
         $expectedFile3->assignIdentifier(['Bucket' => $bucket, 'Key' => 'myid3']);
@@ -225,6 +226,7 @@ class FileTest extends AbstractFunctionalTestCase
 
         $files = $repo->findAll();
         $this->assertInstanceOf(FileResultSet::class, $files);
+        $this->checkLazyLoad($files);
         $this->compareFiles([$expectedFile1, $expectedFile2, $expectedFile3, $expectedFile4], $files);
 
         $files = $repo->findBy(['bucket' => 'mybucket']);
@@ -299,6 +301,22 @@ class FileTest extends AbstractFunctionalTestCase
 
         $files = $repo->findBy([], ['metadata' => ['filename' => -1], 'id' => 1]);
         $this->compareFiles([$expectedFile4, $expectedFile3, $expectedFile1, $expectedFile2], $files);
+    }
+
+    private function checkLazyLoad(iterable $actualFiles): void
+    {
+        $reflectionClass = new \ReflectionClass(File::class);
+        $binProperty = $reflectionClass->getProperty('bin');
+        $metadataProperty = $reflectionClass->getProperty('metadata');
+        $binProperty->setAccessible(true);
+        $metadataProperty->setAccessible(true);
+        foreach ($actualFiles as $file) {
+             $this->assertNull($binProperty->getValue($file));
+             $this->assertNull($metadataProperty->getValue($file));
+        }
+
+        $binProperty->setAccessible(false);
+        $metadataProperty->setAccessible(false);
     }
 
     /**
