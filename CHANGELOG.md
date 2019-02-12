@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Master
+
+# 0.4.0
 * Add some missing return typehints
 * Allow lazy loading when query return many results
 * Add sort for files
