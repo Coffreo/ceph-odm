@@ -12,8 +12,6 @@ interface NotifyIdentifierChanged
      * Adds a listener that wants to be notified about identifier changes.
      *
      * @param IdentifierChangedListener $listener
-     *
-     * @return void
      */
-    public function addIdentifierChangedListener(IdentifierChangedListener $listener);
+    public function addIdentifierChangedListener(IdentifierChangedListener $listener): void;
 }
