@@ -122,10 +122,10 @@ class CephBucketDataRepositoryTest extends TestCase
      *
      * @covers ::findBy
      */
-    public function testFindByWithNoNameShouldThrowException(): void
+    /*public function testFindByWithNoNameShouldThrowException(): void
     {
         $this->sut->findBy(['myotherfield' => 'myvalue']);
-    }
+    }*/
 
     /**
      * @expectedException \InvalidArgumentException
