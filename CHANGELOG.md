@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Remove Codecov token from .travis.yml and put it (after regeneration) in Travis repository settings
 
 # 0.4.0
 * Add some missing return typehints
