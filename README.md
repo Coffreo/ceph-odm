@@ -1,6 +1,7 @@
 # Ceph ODM
 [![Build Status](https://travis-ci.org/Coffreo/ceph-odm.svg?branch=master)](https://travis-ci.org/Coffreo/ceph-odm)
 [![codecov](https://codecov.io/gh/Coffreo/ceph-odm/branch/master/graph/badge.svg)](https://codecov.io/gh/Coffreo/ceph-odm)
+[![packagist](https://img.shields.io/packagist/v/coffreo/ceph-odm.svg)](https://github.com/Coffreo/ceph-odm)
 
 This repository presents a Ceph odm based on Doctrine mapper skeleton.
 
