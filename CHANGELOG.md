@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Master
+* Remove Codecov token from .travis.yml
 
 # 0.4.0
 * Add some missing return typehints
